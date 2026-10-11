@@ -1,0 +1,1566 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>React Weather Lab 2: Live Data</title>
+<meta name="description" content="APC 440 Module 9 Show What You Know: a five-round game about the live weather search you built in Lab 9.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='24' cy='24' r='14' fill='%23f5b301'/%3E%3Cpath d='M20 52a11 11 0 0 1 2-21.8A14 14 0 0 1 49 33a9.5 9.5 0 0 1-1 19z' fill='%231a64b7'/%3E%3C/svg%3E">
+<style>
+:root{
+  --sky:#eef4fa; --card:#ffffff; --ink:#1b2733; --muted:#46566a; --accent:#1a64b7; --accent-dark:#124a8a;
+  --focus:#f58113; --good:#17692e; --good-bg:#e6f4e9; --bad:#b42318; --bad-bg:#fdecea;
+  --line:#c9d6e3; --panel:#f4f7fb; --star:#6e4700; --star-bg:#fff4d6; --star-line:#b7791f;
+  --mono:ui-monospace,"Cascadia Mono",Consolas,Menlo,"Courier New",monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--sky);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;font-size:16px;line-height:1.5}
+img,svg{max-width:100%}
+.sr-only{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px;box-shadow:0 0 0 5px var(--ink)}
+[tabindex="-1"]:focus{outline:none;box-shadow:none}
+[tabindex="-1"]:focus-visible{outline:3px solid var(--focus);outline-offset:2px;box-shadow:none}
+.skip{position:absolute;left:8px;top:-80px;background:var(--ink);color:#fff;padding:10px 14px;border-radius:8px;z-index:20;font-weight:700}
+.skip:focus{top:8px}
+a{color:var(--accent)}
+code,.mono{font-family:var(--mono);font-size:.9em}
+code{background:var(--panel);border:1px solid #d6e0ea;border-radius:4px;padding:0 4px;overflow-wrap:anywhere}
+.small{font-size:.9rem}
+.muted{color:var(--muted)}
+
+/* page frame */
+.site-head{background:#fff;border-bottom:1px solid var(--line)}
+.site-head .wrap{display:flex;align-items:center;gap:14px;padding-top:18px;padding-bottom:18px}
+.logo{width:52px;height:52px;flex:none}
+.site-head h1{margin:0;font-size:1.7rem;line-height:1.2}
+.site-head .sub{margin:2px 0 0;color:var(--muted);font-weight:600}
+.wrap{max-width:1040px;margin:0 auto;padding:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin:0 0 16px;box-shadow:0 1px 2px rgba(27,39,51,.06)}
+h2{font-size:1.4rem;line-height:1.25;margin:0 0 10px}
+h3{font-size:1.1rem;line-height:1.3;margin:0 0 6px}
+.welcome-list{margin:0;padding-left:1.25rem}
+.welcome-list li{margin:4px 0}
+.eyebrow{margin:0;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.06em;font-size:.8rem}
+.note{display:flex;gap:8px;align-items:flex-start;background:#eaf2fb;border:1px solid #b9cfe8;border-radius:10px;padding:8px 12px}
+.note .ic{margin-top:.2em;color:var(--accent)}
+.howto{background:var(--panel);border-radius:10px;padding:8px 12px}
+details.ideas{border:1px solid var(--line);border-radius:10px;padding:8px 12px;margin:12px 0;background:#fbfdff}
+details.ideas summary{cursor:pointer;font-weight:700;color:var(--accent)}
+details.ideas ul{margin:6px 0 2px;padding-left:1.2rem}
+details.ideas li{margin:3px 0}
+
+/* buttons */
+.btn{display:inline-flex;align-items:center;gap:8px;font:inherit;font-weight:700;border-radius:10px;padding:10px 16px;border:2px solid var(--accent);background:var(--accent);color:#fff;cursor:pointer;min-height:44px;text-align:left;line-height:1.25}
+.btn:hover{background:var(--accent-dark);border-color:var(--accent-dark)}
+.btn.secondary{background:#fff;color:var(--accent)}
+.btn.secondary:hover{background:#e8f0fa}
+.btn:disabled,.btn:disabled:hover{background:#e3e8ee;border-color:#a9b5c2;color:#46566a;cursor:not-allowed}
+.btn-mini{display:inline-flex;align-items:center;gap:5px;font:inherit;font-size:.85rem;font-weight:700;padding:4px 10px;min-height:34px;border-radius:8px;border:1.5px solid var(--accent);background:#fff;color:var(--accent);cursor:pointer;line-height:1.2}
+.btn-mini:hover{background:#e8f0fa}
+.btn-mini:disabled,.btn-mini:disabled:hover{border-color:#b4bfcb;color:#5d6b7a;background:#f3f5f8;cursor:not-allowed}
+.btn-row{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px;align-items:center}
+.ic{width:1.1em;height:1.1em;flex:none;vertical-align:-.18em}
+
+/* progress */
+.prog-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px}
+.prog-head h2{margin:0}
+.tiles{list-style:none;margin:12px 0 0;padding:0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+.tiles li{display:flex}
+.tile{width:100%;font:inherit;text-align:left;background:#fff;border:2px solid var(--line);border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:2px;cursor:pointer;color:var(--ink);min-height:96px}
+.tile:hover{border-color:var(--accent)}
+.tile-num{font-weight:800;font-size:.85rem;color:var(--muted)}
+.tile-name{font-weight:700;font-size:.95rem;line-height:1.25}
+.tile-status{display:flex;flex-wrap:wrap;align-items:center;gap:4px;font-size:.85rem;font-weight:700;margin-top:auto}
+.tile-now{font-size:.75rem;font-weight:800;color:#fff;background:var(--accent);border-radius:999px;padding:0 8px;align-self:flex-start}
+.tile.locked{background:#f1f4f7;border-style:dashed;border-color:#8a9aab;color:#46566a;cursor:not-allowed}
+.tile.locked .tile-num{color:#46566a}
+.tile.done{border-color:var(--good)}
+.tile.done .tile-status{color:var(--good)}
+.tile.perfect{border-color:var(--star-line);background:var(--star-bg)}
+.tile.perfect .tile-status{color:var(--star)}
+.tile.perfect .tile-status .ic{color:#d99a00;stroke:var(--star);stroke-width:1}
+.tile.current{border-color:var(--accent);box-shadow:inset 0 0 0 2px var(--accent)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;margin:10px 0 0}
+.legend span{display:inline-flex;align-items:center;gap:4px}
+.reset-confirm:empty{display:none}
+
+/* concept cards */
+.concept{border-radius:12px;padding:12px 14px;margin:12px 0;border:2px solid var(--accent);background:#eaf2fb;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;white-space:normal;text-indent:0;line-height:1.5}
+.concept.wrong{border-color:var(--bad);background:var(--bad-bg)}
+.concept.right{border-color:var(--good);background:var(--good-bg)}
+.concept-title{display:flex;align-items:center;gap:6px;font-weight:800;margin:0 0 4px;color:var(--accent)}
+.concept.wrong .concept-title{color:var(--bad)}
+.concept.right .concept-title{color:var(--good)}
+.concept p{margin:0 0 6px}
+.concept p:last-child{margin-bottom:0}
+.concept .btn-row{margin-top:8px}
+
+/* summary */
+.summary{border:2px solid var(--accent);border-radius:14px;padding:18px;margin-top:18px;background:#f5f9fe}
+.summary.perfect{border-color:var(--star-line);background:var(--star-bg)}
+.summary h3{font-size:1.3rem}
+.sum-score{font-size:1.15rem;font-weight:800;margin:4px 0}
+.big-star{width:64px;height:64px;display:block;margin-bottom:6px}
+.summary.perfect .big-star{animation:pop .7s ease-out}
+@keyframes pop{0%{transform:scale(.3) rotate(-25deg);opacity:0}70%{transform:scale(1.15) rotate(6deg);opacity:1}100%{transform:scale(1) rotate(0)}}
+
+/* round 1 */
+.chips{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-wrap:wrap;gap:10px}
+.chip-item{display:inline-flex;align-items:stretch;max-width:100%}
+.chip{font-family:var(--mono);font-size:.9rem;background:#fff;color:var(--ink);border:2px solid var(--accent);border-right:0;border-radius:999px 0 0 999px;padding:8px 12px;cursor:grab;user-select:none;-webkit-user-select:none;min-height:42px;overflow-wrap:anywhere;text-align:left;display:inline-flex;align-items:center;gap:6px;min-width:0}
+.chip:hover{background:#eaf2fb}
+.chip[aria-pressed="true"]{background:var(--accent);color:#fff}
+.chip.lifting{opacity:.45}
+.picked{font-family:system-ui,sans-serif;font-size:.72rem;font-weight:800;background:#fff;color:var(--accent);border-radius:999px;padding:0 6px;text-transform:uppercase;letter-spacing:.04em}
+.learn-btn{font:inherit;font-size:.8rem;font-weight:800;border:2px solid var(--accent);border-radius:0 999px 999px 0;background:#eaf2fb;color:var(--accent);padding:0 12px;cursor:pointer;white-space:nowrap}
+.learn-btn:hover{background:#d6e6f8}
+.zones{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:14px}
+.zone{border:2px dashed #7f97b0;border-radius:12px;padding:12px;background:#fbfdff;min-width:0}
+.zone.none{grid-column:1/-1}
+.zone.ready{border-color:var(--accent)}
+.zone.hover{border-style:solid;border-color:var(--accent);background:#e3eefb}
+.zone h3{display:flex;align-items:center;gap:6px}
+.zone .hint{margin:0 0 8px}
+.urlbar{font-family:var(--mono);font-size:.88rem;background:#fff;border:2px solid #9fb3c8;border-radius:10px;padding:8px 12px;overflow-wrap:anywhere;word-break:break-all;min-height:44px;margin-bottom:8px}
+.urlbar .base{color:var(--muted)}
+.urlbar .param{color:var(--ink);font-weight:700}
+.urlbar .amp{color:var(--accent);font-weight:800;background:#eaf2fb;border-radius:3px;padding:0 1px}
+.nn-list{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;min-height:30px;align-items:center}
+.nn-chip{font-family:var(--mono);font-size:.88rem;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:2px 10px;overflow-wrap:anywhere}
+.json-cap{font-weight:700;margin:10px 0 4px}
+pre.json-sample{font-family:var(--mono);font-size:.8rem;line-height:1.45;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px;overflow:auto;max-height:380px;margin:0;white-space:pre}
+.drag-ghost{position:fixed;left:0;top:0;z-index:50;pointer-events:none;font-family:var(--mono);font-size:.9rem;background:var(--accent);color:#fff;border-radius:999px;padding:8px 14px;box-shadow:0 8px 22px rgba(27,39,51,.3)}
+body.is-dragging,body.is-dragging *{cursor:grabbing!important;user-select:none;-webkit-user-select:none}
+.send-box{margin-top:14px;border:2px solid var(--accent);border-radius:12px;padding:12px 14px;background:#f5f9fe}
+
+/* round 2 */
+.qhead{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;justify-content:space-between}
+.qcount{margin:0;font-weight:800;color:var(--muted)}
+.src-tag{margin:0;font-weight:700;font-size:.85rem;background:#eaf2fb;color:var(--accent-dark);border-radius:999px;padding:2px 10px}
+.question{font-size:1.1rem;font-weight:700;margin:8px 0}
+.json{font-family:var(--mono);font-size:.9rem;line-height:1.95;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 12px 12px 6px;margin-top:12px;overflow-wrap:anywhere}
+.ln{padding-left:calc(var(--d) * 2ch + 2ch);text-indent:-2ch}
+.ln > *{text-indent:0}
+.p{color:#55606b}
+.tok{font:inherit;line-height:1.5;background:transparent;border:1.5px solid transparent;border-radius:4px;padding:0 2px;margin:0;cursor:pointer;color:inherit;text-indent:0}
+.tok.key{color:#174a85}
+.tok.str{color:#842a69}
+.tok.num{color:#734600}
+.tok:hover{background:#dde9f7;border-color:#8eabcc}
+.tok.correct{background:var(--good-bg);border-color:var(--good);color:var(--good);font-weight:800}
+.tok.correct::after{content:" \2713"}
+.tok.wrong{background:var(--bad-bg);border-color:var(--bad);color:var(--bad);text-decoration:line-through}
+.tok.wrong::after{content:" \2717";display:inline-block;text-decoration:none}
+.inline-fb{margin:6px 0 6px 2ch;font-size:.95rem}
+.path{margin-top:6px}
+
+/* round 3 replica */
+.r3-site{margin-top:8px;background:var(--sky);border-radius:14px;padding:14px}
+.r3-ask{margin-top:6px}
+.replica{border:1px solid #dbe4ee;border-radius:12px;background:#fff;font-size:.95rem;padding:22px;box-shadow:0 1px 3px rgba(27,39,51,.08)}
+.rp-h1{margin:0 0 6px;font-size:2rem;font-weight:800;line-height:1.15;color:var(--ink)}
+.rp-label{display:block;font-weight:700;font-size:.85rem;margin-bottom:4px}
+.rp-row{display:flex;gap:8px}
+.rp-input{flex:1 1 auto;min-width:0;border:1.5px solid #8a9aab;border-radius:6px;background:#fff;padding:6px 10px;min-height:38px;display:flex;align-items:center;font-size:.9rem}
+.rp-btn{border-radius:6px;padding:6px 16px;background:var(--accent);color:#fff;font-weight:700;font-size:.9rem;display:inline-flex;align-items:center;gap:6px;border:2px solid var(--accent);flex:none}
+.rp-btn.off{background:#e3e8ee;color:#46566a;border:2px dashed #7f8fa1}
+.rp-off{font-size:.72rem;font-weight:800;text-transform:uppercase;background:#fff;border:1px solid #7f8fa1;border-radius:4px;padding:0 4px}
+.rp-status{margin:14px 0 0;font-weight:600}
+.rp-panel{background:#f4f7fb;border:1px solid #c9d6e3;border-radius:10px;padding:18px 20px;margin-top:16px}
+.rp-h2{font-weight:800;font-size:1.1rem;margin:0}
+.rp-temp{display:block;font-size:2.8rem;font-weight:800;line-height:1.1;margin-top:8px}
+.rp-desc{display:flex;align-items:center;gap:6px;margin:2px 0 0}
+.rp-tiles{display:flex;flex-wrap:wrap;gap:6px 26px;margin-top:14px}
+.rp-tile{font-size:.8rem;color:var(--muted)}
+.rp-tile strong{display:block;font-size:.9rem;color:var(--ink)}
+.rp-fh{font-weight:800;font-size:1.1rem;margin:20px 0 10px}
+.rp-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(102px,1fr));gap:10px}
+.rp-card{background:#f4f7fb;border:1px solid #c9d6e3;border-radius:8px;padding:8px 9px;font-size:.8rem;line-height:1.4;display:flex;flex-direction:column;gap:3px}
+.rp-day{font-weight:800;font-size:.88rem}
+.rp-date{color:var(--muted);margin-top:-3px}
+.rp-w{display:flex;align-items:flex-start;gap:4px}
+.wx{width:15px;height:15px;flex:none;margin-top:2px}
+.rp-desc .wx{width:20px;height:20px;margin-top:0}
+.rp-badge{display:inline-flex;gap:4px;align-items:center;background:var(--star-bg);color:var(--star);border:1px solid var(--star-line);border-radius:999px;padding:1px 6px;font-size:.7rem;font-weight:800;align-self:flex-start}
+.rp-attr{font-size:.82rem;margin:16px 0 0;display:flex;flex-wrap:wrap;gap:4px 14px}
+.rp-link{color:var(--accent);text-decoration:underline}
+
+/* choices */
+.choices{display:grid;gap:8px;margin-top:10px}
+.state-choices{grid-template-columns:repeat(2,minmax(0,1fr))}
+.choice{font:inherit;text-align:left;background:#fff;border:2px solid #8fa3b8;border-radius:10px;padding:10px 12px;cursor:pointer;color:var(--ink);display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center;min-height:46px}
+.choice:hover{border-color:var(--accent);background:#f2f7fd}
+.choice .choice-text{flex:1 1 12em}
+.choice .tag{display:inline-flex;align-items:center;gap:4px;font-size:.82rem;font-weight:800}
+.choice.tried{border-color:var(--bad);background:var(--bad-bg)}
+.choice.tried .tag{color:var(--bad)}
+.choice.right{border-color:var(--good);background:var(--good-bg);font-weight:600}
+.choice.right .tag{color:var(--good)}
+.choice:disabled{cursor:default}
+.choice:disabled:not(.right){opacity:.8}
+.choice.prompt-line .choice-text{border-left:4px solid #9fb3c8;padding-left:10px}
+
+/* round 4 */
+.steps{list-style:none;padding:0;margin:12px 0 0;display:grid;gap:8px}
+.step{display:grid;grid-template-columns:auto auto minmax(0,1fr);grid-template-areas:"grip pos text" "ctrl ctrl ctrl" "learn learn learn";gap:6px 10px;align-items:start;background:#fff;border:2px solid var(--line);border-radius:10px;padding:10px}
+.grip{grid-area:grip;cursor:grab;touch-action:none;color:var(--muted);display:flex;align-items:center;justify-content:center;width:28px;height:32px;border-radius:6px;background:var(--panel)}
+.grip .ic{width:20px;height:20px}
+.locked-list .grip{visibility:hidden}
+.pos{grid-area:pos;font-weight:800;color:#fff;background:var(--accent);border-radius:999px;min-width:30px;height:30px;display:flex;align-items:center;justify-content:center}
+.step-text{grid-area:text;margin:3px 0 0}
+.step-ctrl{grid-area:ctrl;display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:flex-end}
+.step-learn{grid-area:learn}
+.step-learn .concept{margin:4px 0 0}
+.step.ok{border-color:var(--good);background:var(--good-bg)}
+.step.bad{border-color:var(--bad);background:var(--bad-bg)}
+.step.dragging{box-shadow:0 10px 24px rgba(27,39,51,.22);border-color:var(--accent);position:relative;z-index:2}
+.mark{font-size:.85rem;font-weight:800;display:inline-flex;gap:4px;align-items:center;margin-right:auto}
+.step.ok .mark{color:var(--good)}
+.step.bad .mark{color:var(--bad)}
+.timeline{border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:#fbfdff;margin-top:10px}
+.lane{margin:6px 0 12px}
+.lane-label{font-weight:800;margin:0 0 4px}
+.track{position:relative;height:30px;background:var(--panel);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg{position:absolute;top:4px;bottom:4px;width:0;transition:width .9s linear}
+.seg.out{border-radius:6px 0 0 6px}
+.seg.back{border-radius:0 6px 6px 0}
+.s1o{left:0;background:var(--accent)}
+.s1b{left:23%;background:repeating-linear-gradient(135deg,#1a64b7 0 6px,#5e93cf 6px 12px)}
+.s2o{left:50%;background:#0f6b5c}
+.s2b{left:73%;background:repeating-linear-gradient(135deg,#0f6b5c 0 6px,#4f9d8f 6px 12px)}
+.seg.full{width:23%}
+.lane-state{font-size:.92rem;margin:4px 0 0}
+.axis{display:flex;justify-content:space-between;font-size:.8rem;color:var(--muted);border-top:1px solid var(--line);padding-top:4px}
+.tl-status{margin:8px 0 0;font-weight:700}
+.tl-key{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:.82rem;color:var(--muted);margin:6px 0 0}
+.tl-key span{display:inline-flex;align-items:center;gap:5px}
+.sw{display:inline-block;width:22px;height:10px;border-radius:3px}
+
+/* round 5 */
+.parts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:12px 0}
+.part{border:2px solid var(--line);border-radius:10px;padding:8px 10px;background:#fbfdff}
+.part strong{display:block}
+.did{border:2px solid #8fa3b8;border-radius:12px;padding:12px 14px;background:var(--panel);margin-top:8px}
+.did-title{margin:0 0 4px;font-weight:800;display:flex;align-items:center;gap:6px}
+.part-badge{display:inline-flex;align-items:center;gap:6px;font-weight:800;border-radius:999px;padding:3px 12px;border:2px solid var(--accent);background:#fff;color:var(--accent-dark);margin:2px 0 8px}
+
+/* results */
+.locked-box{display:flex;gap:10px;align-items:center;background:#f1f4f7;border:2px dashed #8a9aab;border-radius:12px;padding:14px;color:#46566a}
+.locked-box p{margin:0}
+.locked-box .ic{width:1.6em;height:1.6em}
+.score-table{width:100%;border-collapse:collapse;margin:8px 0}
+.score-table th,.score-table td{text-align:left;padding:8px;border-bottom:1px solid var(--line);vertical-align:top}
+.score-table td{text-align:right;white-space:nowrap;font-weight:700}
+.score-table tfoot th,.score-table tfoot td{font-size:1.1rem;font-weight:800;border-bottom:0;border-top:2px solid var(--ink)}
+.score-table .ic{color:#d99a00}
+.badge-perfect{display:inline-flex;gap:6px;align-items:center;background:var(--star-bg);color:var(--star);border:2px solid var(--star-line);border-radius:999px;padding:4px 14px;font-weight:800}
+.badge-perfect .ic{color:#d99a00}
+.field{display:grid;gap:4px;margin:12px 0}
+.field label,.field legend{font-weight:700}
+input[type=text],input[type=number]{font:inherit;padding:10px 12px;border:2px solid #7f8fa1;border-radius:8px;min-height:44px;width:100%;max-width:420px;color:var(--ink);background:#fff}
+.code-out{font-family:var(--mono);font-size:1.35rem;font-weight:800;letter-spacing:.08em}
+.cert-preview{display:block;width:100%;max-width:720px;height:auto;border:1px solid var(--line);border-radius:8px;margin-top:10px}
+fieldset{border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.v-scores{display:grid;gap:8px}
+.v-score{display:grid;gap:2px}
+.v-score input{max-width:140px}
+
+@media (max-width:700px){
+  .zones{grid-template-columns:minmax(0,1fr)}
+  .parts{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:640px){
+  .card{padding:16px}
+  .site-head h1{font-size:1.35rem}
+  .logo{width:40px;height:40px}
+  .tile{padding:8px 6px;min-height:78px}
+  .tile-name,.long{display:none}
+  .tile-status{font-size:.78rem;flex-direction:column;align-items:flex-start;gap:1px}
+  .tile-now{font-size:.7rem;padding:0 6px}
+  .json{font-size:.8rem}
+  .r3-site{padding:8px}
+  .replica{padding:14px}
+  .rp-h1{font-size:1.6rem}
+  .rp-panel{padding:14px}
+  .rp-cards{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (min-width:760px){
+  .step{grid-template-columns:auto auto minmax(0,1fr) auto;grid-template-areas:"grip pos text ctrl" "learn learn learn learn"}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to the game</a>
+<header class="site-head">
+  <div class="wrap">
+    <svg class="logo" viewBox="0 0 64 64" aria-hidden="true" focusable="false"><circle cx="24" cy="24" r="14" fill="#f5b301"/><path d="M20 52a11 11 0 0 1 2-21.8A14 14 0 0 1 49 33a9.5 9.5 0 0 1-1 19z" fill="#1a64b7"/></svg>
+    <div>
+      <h1>React Weather Lab 2: Live Data</h1>
+      <p class="sub">APC 440 Module 9: Show What You Know</p>
+    </div>
+  </div>
+</header>
+<main id="main" class="wrap" tabindex="-1">
+  <section class="card" aria-labelledby="welcome-h">
+    <h2 id="welcome-h">Welcome to the lab</h2>
+    <ul class="welcome-list">
+      <li>This is a five-round game about the live weather search you built in Lab 9.</li>
+      <li>Play as many times as you like. Your best score counts, so keep going for a perfect score.</li>
+      <li>You earn credit for answers that are correct on the first try. Wrong answers explain why and let you try again, so everyone can finish.</li>
+      <li>Rounds unlock in order: finish a round to open the next one.</li>
+      <li>When you finish all five rounds, type your name, click "Save my results," and upload the image to the Module 9 Show What You Know assignment in Canvas.</li>
+    </ul>
+  </section>
+
+  <section class="card" id="progress" aria-labelledby="progress-h">
+    <div class="prog-head">
+      <h2 id="progress-h">Your progress</h2>
+      <button type="button" class="btn-mini" data-reset>Play again from the start</button>
+    </div>
+    <div class="reset-confirm"></div>
+    <ol class="tiles" id="tiles"></ol>
+    <p class="legend small muted" id="legend"></p>
+  </section>
+
+  <section class="card" id="round" aria-labelledby="round-h"></section>
+
+  <section class="card" id="results" aria-labelledby="results-h"></section>
+</main>
+<div id="live" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+<noscript><p class="wrap">This game needs JavaScript. Please turn it on and reload the page.</p></noscript>
+
+<script>
+(function () {
+'use strict';
+
+/* ================= Helpers ================= */
+const $ = (s, r) => (r || document).querySelector(s);
+const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const strip = s => String(s).replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'");
+function shuffle(a) { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+const pick = a => a[Math.floor(Math.random() * a.length)];
+const reduceMotion = () => !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+let liveTimer = null;
+function announce(msg) {
+  const el = $('#live'); if (!el) return;
+  el.textContent = '';
+  clearTimeout(liveTimer);
+  liveTimer = setTimeout(() => { el.textContent = strip(msg); }, 80);
+}
+function focusHeading(el) {
+  if (!el) return;
+  el.focus({ preventScroll: true });
+  el.scrollIntoView({ behavior: reduceMotion() ? 'auto' : 'smooth', block: 'start' });
+}
+function focusSoft(el) { if (el) { el.focus({ preventScroll: true }); el.scrollIntoView({ behavior: reduceMotion() ? 'auto' : 'smooth', block: 'nearest' }); } }
+
+const svg = (body, cls) => `<svg class="${cls || 'ic'}" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${body}</svg>`;
+const STAR_PATH = 'M12 2.6l2.85 5.95 6.55.78-4.83 4.5 1.25 6.48L12 17.1l-5.82 3.2 1.25-6.48-4.83-4.5 6.55-.78z';
+const ICON = {
+  check: svg('<path d="M4.5 12.5l5 5 10-11" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>'),
+  x: svg('<path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>'),
+  star: svg(`<path d="${STAR_PATH}" fill="currentColor"/>`),
+  lock: svg('<rect x="5" y="10.5" width="14" height="10" rx="2" fill="currentColor"/><path d="M8.2 10.5V7.8a3.8 3.8 0 0 1 7.6 0v2.7" fill="none" stroke="currentColor" stroke-width="2.2"/>'),
+  play: svg('<path d="M8 5v14l11-7z" fill="currentColor"/>'),
+  bulb: svg('<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.6 10.8c.7.6 1.1 1.3 1.1 2.2h5c0-.9.4-1.6 1.1-2.2A6 6 0 0 0 12 3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>'),
+  up: svg('<path d="M12 5l-7 8h4.5v6h5v-6H19z" fill="currentColor"/>'),
+  down: svg('<path d="M12 19l7-8h-4.5V5h-5v6H5z" fill="currentColor"/>'),
+  grip: svg('<g fill="currentColor"><circle cx="9" cy="6" r="1.7"/><circle cx="15" cy="6" r="1.7"/><circle cx="9" cy="12" r="1.7"/><circle cx="15" cy="12" r="1.7"/><circle cx="9" cy="18" r="1.7"/><circle cx="15" cy="18" r="1.7"/></g>'),
+  umbrella: svg('<path d="M12 3a9 9 0 0 0-9 9h18a9 9 0 0 0-9-9zM12 12v6.5a2 2 0 0 1-4 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'),
+  drop: svg('<path d="M12 3s-6 7-6 11a6 6 0 0 0 12 0c0-4-6-11-6-11z" fill="currentColor"/>'),
+  download: svg('<path d="M12 4v11M7 10l5 5 5-5M5 20h14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>'),
+  info: svg('<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 11v6M12 7.5v.5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>'),
+  send: svg('<path d="M3 11l18-8-8 18-2-8z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>'),
+  robot: svg('<rect x="4" y="8" width="16" height="12" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="9.5" cy="14" r="1.5" fill="currentColor"/><circle cx="14.5" cy="14" r="1.5" fill="currentColor"/><path d="M12 8V4.5M12 4.5h0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>'),
+  globe: svg('<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3 12h18M12 3c2.5 3 2.5 15 0 18M12 3c-2.5 3-2.5 15 0 18" fill="none" stroke="currentColor" stroke-width="1.6"/>')
+};
+const BIG_STAR = `<svg class="big-star" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="${STAR_PATH}" fill="#f2b100" stroke="#6e4700" stroke-width="1" stroke-linejoin="round"/></svg>`;
+
+/* ================= Name memory (only thing stored) ================= */
+const NAME_KEY = 'apc440-m9-swyk-name';
+function loadName() { try { return localStorage.getItem(NAME_KEY) || ''; } catch (e) { return ''; } }
+function saveName(v) { try { localStorage.setItem(NAME_KEY, v); } catch (e) { /* storage blocked: ignore */ } }
+
+/* ================= Static API samples ================= */
+const GEO = {
+  results: [{
+    id: 5267332, name: 'Platteville', latitude: 42.73416, longitude: -90.47846, country_code: 'US',
+    admin1: 'Wisconsin', admin2: 'Grant', timezone: 'America/Chicago', postcodes: ['53818']
+  }],
+  generationtime_ms: 0.5
+};
+const FC = {
+  latitude: 42.73416, longitude: -90.47846, timezone: 'America/Chicago',
+  current: { time: '2026-10-26T10:00', temperature_2m: 48, apparent_temperature: 44, relative_humidity_2m: 71, weather_code: 3, wind_speed_10m: 12 },
+  daily: {
+    time: ['2026-10-26', '2026-10-27', '2026-10-28', '2026-10-29', '2026-10-30', '2026-10-31', '2026-11-01'],
+    weather_code: [3, 61, 63, 2, 1, 0, 80],
+    temperature_2m_max: [52, 49, 46, 55, 58, 61, 54],
+    temperature_2m_min: [38, 40, 35, 33, 37, 42, 41],
+    precipitation_probability_max: [20, 70, 85, 15, 5, 0, 45]
+  }
+};
+function pretty(v, ind) {
+  ind = ind || '';
+  if (Array.isArray(v)) {
+    if (v.every(x => x === null || typeof x !== 'object')) return '[' + v.map(x => JSON.stringify(x)).join(', ') + ']';
+    return '[\n' + v.map(x => ind + '  ' + pretty(x, ind + '  ')).join(',\n') + '\n' + ind + ']';
+  }
+  if (v && typeof v === 'object') {
+    return '{\n' + Object.keys(v).map(k => ind + '  ' + JSON.stringify(k) + ': ' + pretty(v[k], ind + '  ')).join(',\n') + '\n' + ind + '}';
+  }
+  return JSON.stringify(v);
+}
+
+/* ================= Game state ================= */
+const ROUNDS = [
+  { name: 'Build the Request', total: 8 },
+  { name: 'Find It in the JSON', total: 6 },
+  { name: 'Name That State', total: 6 },
+  { name: 'Race the Requests', total: 9 },
+  { name: 'Prompt Doctor', total: 6 }
+];
+const GRAND_TOTAL = ROUNDS.reduce((s, r) => s + r.total, 0); // 35
+const game = { best: [null, null, null, null, null], finished: [false, false, false, false, false], active: 0 };
+let play = null;
+const isUnlocked = i => i === 0 || game.finished[i - 1];
+
+const IDEAS = [
+  ['An API endpoint answers with data (JSON) instead of a web page.',
+   'Everything after <code>?</code> is the query string.',
+   'Each <code>&amp;</code> adds one more parameter.',
+   'Two requests run in order because the second needs numbers from the first.'],
+  ['Read the data before you code it.',
+   'JSON nests objects <code>{&nbsp;}</code> and lists <code>[&nbsp;]</code>.',
+   '<code>results[0]</code> is the first match.',
+   'The forecast uses the same key names as <code>mockWeather.json</code>, which is why your display components did not change.'],
+  ['An interface state is one situation the screen can be in.',
+   'Each state shows exactly one message. In success, the weather takes the message\'s place.',
+   'The Search button\'s on/off is derived from <code>status</code>, not stored separately.'],
+  ['Event handlers start the request: on submit, not on every keystroke.',
+   'The child reports and the parent decides.',
+   '<code>await</code> waits for an answer without freezing the page.',
+   'State changes drive what the screen shows.'],
+  ['A prompt line is a React decision written in plain words.',
+   'Names keep later prompts working.',
+   'Not yet keeps one step to one small, checkable change.',
+   'In your Module 10 custom app, you write every prompt yourself.']
+];
+
+const CHEERS = [
+  'Every answer right on the first try. Nice work!',
+  'A clean sweep. You really know this one.',
+  'Star earned. That is how it is done!',
+  'Flawless. Your Lab 9 work shows.'
+];
+const ENCOURAGE = [
+  'You finished every item, and every miss taught you something. Play it again to go for the star. Only your best score counts.',
+  'Nice work getting through it. The explanations are fresh in your mind, so this is a great time to replay for a perfect score.',
+  'You did it. Want the star? A replay can only help, because your best score is the one that counts.'
+];
+
+/* ================= Shared UI pieces ================= */
+function card(kind, title, bodyHTML, extra) {
+  const icon = kind === 'wrong' ? ICON.x : kind === 'right' ? ICON.check : ICON.bulb;
+  return `<div class="concept ${kind}" tabindex="-1"><p class="concept-title">${icon}<span>${title}</span></p>${bodyHTML}${extra || ''}</div>`;
+}
+const CLOSE = '<div class="btn-row"><button type="button" class="btn-mini" data-close-card>Close</button></div>';
+function showCard(slot, kind, title, bodyHTML, extra, quiet) {
+  if (!slot) return null;
+  slot.innerHTML = card(kind, title, bodyHTML, extra);
+  if (!quiet) announce(title + '. ' + bodyHTML);
+  return slot.firstElementChild;
+}
+function learnCard(slot, title, bodyHTML, returnTo) {
+  play.learnReturn = returnTo || null;
+  const el = showCard(slot, 'learn', 'Learn it: ' + title, bodyHTML, CLOSE);
+  return el;
+}
+function shell(i, introHTML) {
+  const m = ROUNDS[i];
+  const replay = game.finished[i]
+    ? `<p class="note">${ICON.info}<span>You finished this round before. Your best so far is ${game.best[i]} of ${m.total} correct on the first try. A higher score replaces it; a lower one never does.</span></p>`
+    : '';
+  return `<p class="eyebrow">Round ${i + 1} of 5</p>
+    <h2 id="round-h" tabindex="-1">Round ${i + 1}: ${m.name}</h2>
+    ${replay}${introHTML}
+    <details class="ideas" open><summary>Big ideas in this round</summary><ul>${IDEAS[i].map(x => `<li>${x}</li>`).join('')}</ul></details>`;
+}
+function choiceHTML(idx, html, extraClass) {
+  return `<button type="button" class="choice ${extraClass || ''}" data-choice="${idx}"><span class="choice-text">${html}</span><span class="tag"></span></button>`;
+}
+function markChoice(btn, ok) {
+  const tag = btn.querySelector('.tag');
+  if (ok) {
+    btn.classList.add('right');
+    tag.innerHTML = `${ICON.check}Correct`;
+    $$('.choice', btn.parentNode).forEach(b => { b.disabled = true; });
+  } else {
+    btn.classList.add('tried');
+    tag.innerHTML = `${ICON.x}Not this one`;
+  }
+}
+
+/* ================= Progress tiles ================= */
+function renderProgress() {
+  $('#tiles').innerHTML = ROUNDS.map((m, i) => {
+    const unlocked = isUnlocked(i), cur = i === game.active && unlocked;
+    const fin = game.finished[i], perfect = fin && game.best[i] === m.total;
+    let cls = 'tile', icon, status, label;
+    if (!unlocked) { cls += ' locked'; icon = ICON.lock; status = 'Locked'; label = 'locked. Finish the round before it to open it.'; }
+    else if (perfect) { cls += ' perfect'; icon = ICON.star; status = 'Perfect'; label = `perfect, ${m.total} of ${m.total}.`; }
+    else if (fin) { cls += ' done'; icon = ICON.check; status = `<span class="long">Best </span>${game.best[i]}/${m.total}`; label = `finished, best ${game.best[i]} of ${m.total}.`; }
+    else { icon = ICON.play; status = 'Open'; label = 'open.'; }
+    if (cur) { cls += ' current'; label += ' Playing now.'; }
+    return `<li><button type="button" class="${cls}" data-round="${i}" ${unlocked ? '' : 'disabled'} ${cur ? 'aria-current="step"' : ''} aria-label="Round ${i + 1}: ${m.name}, ${label}">
+      <span class="tile-num"><span class="long">Round </span>${i + 1}</span>
+      <span class="tile-name">${m.name}</span>
+      ${cur ? '<span class="tile-now">Now</span>' : ''}
+      <span class="tile-status">${icon}<span>${status}</span></span>
+    </button></li>`;
+  }).join('');
+}
+$('#legend').innerHTML = `<span>${ICON.lock} Locked</span><span>${ICON.play} Open</span><span>${ICON.check} Finished</span><span>${ICON.star} Perfect</span>`;
+
+/* ================= Round flow ================= */
+function clearTimers() { if (play && play.timers) play.timers.forEach(t => clearTimeout(t)); }
+function startRound(i, focus) {
+  clearTimers();
+  game.active = i;
+  play = { round: i, missed: new Set(), done: new Set(), timers: [], learnReturn: null };
+  IMPL[i].init();
+  renderProgress();
+  IMPL[i].render();
+  if (focus) focusHeading($('#round-h'));
+}
+function firstTryScore() { let n = 0; play.done.forEach(id => { if (!play.missed.has(id)) n++; }); return n; }
+
+function finishRound(score) {
+  const i = game.active, total = ROUNDS[i].total, prev = game.best[i];
+  game.best[i] = prev == null ? score : Math.max(prev, score);
+  game.finished[i] = true;
+  renderProgress();
+  renderResults();
+  const perfect = score === total;
+  const nextLabel = i < 4 ? `Continue to Round ${i + 2}` : 'Continue to your results';
+  let html;
+  if (perfect) {
+    html = `<div class="summary perfect" id="sum" tabindex="-1">${BIG_STAR}
+      <h3>Perfect round!</h3>
+      <p class="sum-score">${score} of ${total} correct on the first try.</p>
+      <p>${pick(CHEERS)}</p>
+      <div class="btn-row"><button type="button" class="btn" data-continue>${nextLabel}</button></div></div>`;
+  } else {
+    const bestLine = game.best[i] > score ? `<p>Your best for this round is still ${game.best[i]} of ${total}.</p>` : '';
+    html = `<div class="summary" id="sum" tabindex="-1">
+      <h3>Round ${i + 1} complete</h3>
+      <p class="sum-score">${score} of ${total} correct on the first try.</p>
+      ${bestLine}<p>${pick(ENCOURAGE)}</p>
+      <div class="btn-row"><button type="button" class="btn" data-replay>Replay this round for a perfect score</button>
+      <button type="button" class="btn secondary" data-continue>${nextLabel}</button></div></div>`;
+  }
+  $('#summary').innerHTML = html;
+  const s = $('#sum');
+  focusSoft(s);
+  announce(`Round ${i + 1} complete. ${score} of ${total} correct on the first try.` + (perfect ? ' Perfect round!' : ''));
+}
+
+/* ================= ROUND 1: Build the Request ================= */
+const ZONES = {
+  geo: { label: 'Geocoding request', base: 'https://geocoding-api.open-meteo.com/v1/search?', hint: 'Finds the place.' },
+  fc: { label: 'Forecast request', base: 'https://api.open-meteo.com/v1/forecast?', hint: 'Gets the weather for a spot on the map.' },
+  none: { label: 'Not needed', hint: 'For a chip that belongs in neither request.' }
+};
+const CHIPS = [
+  { id: 'name', text: 'name=53818', zone: 'geo', why: 'The geocoding request turns the text the user typed into a place.' },
+  { id: 'country', text: 'countryCode=US', zone: 'geo', why: 'Without it, a five-digit number can match a postal code in another country.' },
+  { id: 'count', text: 'count=5', zone: 'geo', why: 'It asks for up to five matches; your site uses the first one.' },
+  { id: 'lat', text: 'latitude=42.73416', zone: 'fc', why: 'The forecast needs coordinates, which is why geocoding runs first.' },
+  { id: 'lon', text: 'longitude=-90.47846', zone: 'fc', why: 'Same reason as latitude: the forecast needs coordinates, which is why geocoding runs first.' },
+  { id: 'unit', text: 'temperature_unit=fahrenheit', zone: 'fc', why: 'Units belong to the weather request; °F matches your Module 8 site.' },
+  { id: 'days', text: 'forecast_days=7', zone: 'fc', why: 'Seven days fills the seven ForecastCards.' },
+  { id: 'key', text: 'apiKey=abc123', zone: 'none', why: 'Open-Meteo needs no key. And anything in frontend code, even a Vite environment variable, is visible to anyone who opens your site.' }
+];
+const chipById = id => CHIPS.find(c => c.id === id);
+const zoneName = z => z === 'none' ? 'Not needed' : 'the ' + ZONES[z].label;
+
+const R1 = {
+  init() {
+    play.order = shuffle(CHIPS.map(c => c.id));
+    play.placed = { geo: [], fc: [], none: [] };
+    play.sel = null; play.sent = false;
+  },
+  isPlaced(id) { return play.placed.geo.includes(id) || play.placed.fc.includes(id) || play.placed.none.includes(id); },
+  render() {
+    $('#round').innerHTML = shell(0, `
+      <p>You type <strong>53818</strong> and press Search. Your site sends two requests to Open-Meteo, one after the other. Build both addresses.</p>
+      <p class="howto"><strong>How to play:</strong> drag each chip to the spot where it belongs. Or click (or tap) a chip, then choose <strong>Place here</strong> on a spot. With a keyboard, press Enter on a chip, then Tab to a <strong>Place here</strong> button.</p>`) +
+      `<div id="r1-pool"></div><div id="fb" aria-live="off"></div><div id="r1-zones" class="zones"></div><div id="r1-send"></div><div id="summary"></div>`;
+    R1.board();
+  },
+  board() {
+    const left = play.order.filter(id => !R1.isPlaced(id));
+    const sel = play.sel ? chipById(play.sel) : null;
+    $('#r1-pool').innerHTML = `<h3>Query parameter chips</h3>
+      <p class="small muted" style="margin:0">${left.length} of 8 left to place.${sel ? ` You picked <code>${esc(sel.text)}</code>. Now choose a spot.` : ''}</p>` +
+      (left.length ? `<ul class="chips">${left.map(id => {
+        const c = chipById(id), on = play.sel === id;
+        return `<li class="chip-item"><button type="button" class="chip" data-chip="${c.id}" aria-pressed="${on}">${on ? '<span class="picked">Picked</span>' : ''}<span>${esc(c.text)}</span></button><button type="button" class="learn-btn" data-learn="${c.id}" aria-label="Learn it: ${esc(c.text)}">Learn it</button></li>`;
+      }).join('')}</ul>` : `<p>${ICON.check} All eight chips are placed.</p>`);
+    $('#r1-zones').innerHTML = ['geo', 'fc', 'none'].map(z => R1.zoneHTML(z, sel, left.length)).join('');
+    const send = $('#r1-send');
+    if (!left.length && !play.sent) {
+      send.innerHTML = `<div class="send-box"><p style="margin:0 0 8px">Both addresses are built. Everything after <code>?</code> is the query string, and each <code>&amp;</code> added one more parameter.</p>
+        <button type="button" class="btn" data-send>${ICON.send} Send request</button>
+        <p class="small muted" style="margin:8px 0 0">This game uses saved sample answers, so nothing actually goes over the network.</p></div>`;
+    }
+  },
+  zoneHTML(z, sel, leftCount) {
+    const Z = ZONES[z], items = play.placed[z].map(chipById);
+    let body;
+    if (z === 'none') {
+      body = `<div class="nn-list">${items.length ? items.map(c => `<span class="nn-chip"><s>${esc(c.text)}</s> left out</span>`).join('') : '<span class="small muted">Nothing here yet.</span>'}</div>`;
+    } else {
+      body = `<div class="urlbar"><span class="sr-only">Address so far: </span><span class="base">${esc(Z.base)}</span>${items.map(c => `<span class="param">${esc(c.text)}</span>`).join('<span class="amp">&amp;</span>')}</div>`;
+    }
+    const btn = leftCount ? `<button type="button" class="btn-mini" data-place="${z}" ${sel ? `aria-label="Place ${esc(sel.text)} in ${Z.label}"` : 'disabled'}>${sel ? 'Place here' : 'Pick a chip first'}</button>` : '';
+    return `<div class="zone ${z === 'none' ? 'none' : ''} ${sel ? 'ready' : ''}" data-zone="${z}">
+      <h3>${z === 'none' ? ICON.x : ICON.globe}${Z.label}</h3><p class="hint small muted">${Z.hint}</p>
+      ${body}${btn}<div class="json-out" id="json-${z}"></div></div>`;
+  },
+  focusChip(id) { const b = $$('#r1-pool .chip').find(x => x.dataset.chip === id); if (b) b.focus(); },
+  place(id, z) {
+    if (!id || play.sent || R1.isPlaced(id)) return;
+    const c = chipById(id), fb = $('#fb');
+    play.sel = null;
+    if (c.zone === z) {
+      play.placed[z].push(id); play.done.add(id);
+      const title = z === 'none' ? `Correct: ${c.text} is not needed` : `Correct: ${c.text} goes in the ${ZONES[z].label}`;
+      showCard(fb, 'right', esc(title), `<p>${c.why}</p>`);
+      R1.board();
+      const next = $('#r1-pool .chip');
+      if (next) next.focus(); else { const s = $('[data-send]'); if (s) s.focus(); }
+    } else {
+      play.missed.add(id);
+      let msg;
+      if (c.zone === 'none') msg = `<code>${esc(c.text)}</code> does not belong in either request. ${c.why}`;
+      else if (z === 'none') msg = `Your site does need <code>${esc(c.text)}</code>. ${c.why}`;
+      else msg = `<code>${esc(c.text)}</code> does not go in ${zoneName(z)}. ${c.why}`;
+      showCard(fb, 'wrong', 'Not quite. Try again.', `<p>${msg}</p>`);
+      R1.board();
+      R1.focusChip(id);
+    }
+  },
+  send() {
+    if (play.sent) return;
+    play.sent = true;
+    $('#json-geo').innerHTML = `<p class="json-cap">Answer (JSON):</p><pre class="json-sample" tabindex="0" aria-label="Geocoding response JSON">${esc(pretty(GEO))}</pre>`;
+    $('#json-fc').innerHTML = `<p class="json-cap">Answer (JSON):</p><pre class="json-sample" tabindex="0" aria-label="Forecast response JSON">${esc(pretty(FC))}</pre>`;
+    $('#r1-send').innerHTML = card('learn', 'What just happened', `<p>Each API endpoint answered with data (JSON) instead of a web page. Your React code reads that data and decides what the screen shows.</p>
+      <p>The two requests run in order: the forecast needs the latitude and longitude that the geocoding answer sends back.</p>`);
+    announce('Requests sent. Each endpoint answered with JSON. The samples are under each address.');
+    finishRound(firstTryScore());
+  },
+  onClick(e) {
+    const t = e.target;
+    const chip = t.closest('[data-chip]');
+    if (chip) {
+      if (suppressClick) return;
+      const id = chip.dataset.chip, c = chipById(id);
+      play.sel = play.sel === id ? null : id;
+      R1.board(); R1.focusChip(id);
+      announce(play.sel ? `Picked ${c.text}. Now choose a spot: Geocoding request, Forecast request, or Not needed.` : `Unpicked ${c.text}.`);
+      return;
+    }
+    const learn = t.closest('[data-learn]');
+    if (learn) { const c = chipById(learn.dataset.learn); learnCard($('#fb'), esc(c.text), `<p>${c.why}</p>`, learn); return; }
+    const place = t.closest('[data-place]');
+    if (place) { R1.place(play.sel, place.dataset.place); return; }
+    if (t.closest('[data-send]')) { R1.send(); return; }
+    const zone = t.closest('.zone');
+    if (zone && play.sel && !t.closest('button') && !t.closest('pre')) R1.place(play.sel, zone.dataset.zone);
+  }
+};
+
+/* Mouse and pen dragging for Round 1 chips (touch uses tap-to-place) */
+let drag = null, suppressClick = false;
+function endDrag() {
+  if (!drag) return;
+  if (drag.ghost) drag.ghost.remove();
+  if (drag.hover) drag.hover.classList.remove('hover');
+  document.body.classList.remove('is-dragging');
+  drag = null;
+}
+document.addEventListener('pointerdown', e => {
+  if (game.active !== 0 || !play || play.sent) return;
+  const chip = e.target.closest && e.target.closest('#round .chip');
+  if (!chip || e.pointerType === 'touch' || e.button !== 0) return;
+  drag = { id: chip.dataset.chip, x0: e.clientX, y0: e.clientY, active: false, ghost: null, src: chip, hover: null };
+});
+document.addEventListener('pointermove', e => {
+  if (!drag) return;
+  if (!drag.active) {
+    if (Math.hypot(e.clientX - drag.x0, e.clientY - drag.y0) < 6) return;
+    drag.active = true;
+    const g = document.createElement('div');
+    g.className = 'drag-ghost'; g.setAttribute('aria-hidden', 'true');
+    g.textContent = chipById(drag.id).text;
+    document.body.appendChild(g); drag.ghost = g;
+    document.body.classList.add('is-dragging');
+    drag.src.classList.add('lifting');
+  }
+  drag.ghost.style.transform = `translate(${e.clientX + 10}px, ${e.clientY + 10}px)`;
+  const under = document.elementFromPoint(e.clientX, e.clientY);
+  const z = under && under.closest('#r1-zones .zone');
+  if (drag.hover !== z) { if (drag.hover) drag.hover.classList.remove('hover'); if (z) z.classList.add('hover'); drag.hover = z; }
+});
+document.addEventListener('pointerup', e => {
+  if (!drag) return;
+  const d = drag;
+  if (!d.active) { drag = null; return; }
+  const under = document.elementFromPoint(e.clientX, e.clientY);
+  const z = under && under.closest('#r1-zones .zone');
+  endDrag();
+  suppressClick = true; setTimeout(() => { suppressClick = false; }, 0);
+  if (z) R1.place(d.id, z.dataset.zone); else d.src.classList.remove('lifting');
+});
+document.addEventListener('pointercancel', () => { if (drag && drag.src) drag.src.classList.remove('lifting'); endDrag(); });
+
+/* ================= ROUND 2: Find It in the JSON ================= */
+const R2_ITEMS = [
+  { id: 'results', src: 'geo', q: 'Your site uses the first match. Click the key that holds the list of matching places.',
+    ans: 'k:results', path: 'data.results',
+    right: '<code>results</code> holds a list, so its value starts with <code>[</code>. <code>data.results[0]</code> is the first match, which your site saves as <code>place</code>.',
+    learn: 'JSON nests things. Curly braces <code>{&nbsp;}</code> hold an object with named keys. Square brackets <code>[&nbsp;]</code> hold a list. Look for the key whose value is a list of places.',
+    wrong: 'Look for a key whose value is a list in square brackets <code>[&nbsp;]</code> with the places inside it.',
+    hints: { 'k:results[0].postcodes': '<code>postcodes</code> is a list too, but it holds postal codes for one place. Look higher up for the list of places.',
+             'k:results[0].name': '<code>name</code> belongs to one place. Look higher up for the key that holds every place.' } },
+  { id: 'lat', src: 'geo', q: 'The forecast request needs this number. Click the latitude value.',
+    ans: 'v:results[0].latitude', path: 'place.latitude',
+    right: 'Your code saves the first match as <code>place</code>, so this number is <code>place.latitude</code>. It goes into the forecast address.',
+    learn: 'Each place in the list has its own <code>latitude</code> and <code>longitude</code>. A key is the name on the left; the value is the data after the colon.',
+    wrong: 'Find the key <code>latitude</code>, then click the number right after it.',
+    hints: { 'v:results[0].longitude': 'That is the longitude. Latitude is the line just above it.' } },
+  { id: 'admin1', src: 'geo', q: 'Your site shows "Platteville, Wisconsin." Click where "Wisconsin" comes from.',
+    ans: 'v:results[0].admin1', path: 'place.admin1',
+    right: 'Your site joins <code>place.name</code> and <code>place.admin1</code> to show "Platteville, Wisconsin."',
+    learn: 'In the geocoding answer, <code>admin1</code> is the state or province and <code>admin2</code> is the county.',
+    wrong: 'Find the value that says "Wisconsin."',
+    hints: { 'v:results[0].admin2': 'Grant is <code>admin2</code>, the county. The state is one line up.',
+             'v:results[0].name': 'That is the city, the first half of "Platteville, Wisconsin." Click where the state comes from.',
+             'v:results[0].country_code': 'US is the country. The state is more specific.' } },
+  { id: 'high', src: 'fc', q: 'Click today\'s high temperature.',
+    ans: 'v:daily.temperature_2m_max[0]', path: 'forecast.daily.temperature_2m_max[0]',
+    right: '<code>daily</code> holds lists with one value per day. <code>max</code> means high, and index <code>[0]</code> is today, so today\'s high is 52.',
+    learn: '<code>daily</code> holds lists of 7 values, one per day. The first value, index <code>[0]</code>, is today. <code>max</code> means high; <code>min</code> means low.',
+    wrong: 'Look inside <code>daily</code> for the list of highs, then click its first value.',
+    hints: { 'v:daily.temperature_2m_min[0]': 'That is today\'s low. <code>min</code> means low; <code>max</code> means high.',
+             'v:current.temperature_2m': 'That is the temperature right now. Today\'s high is in the <code>daily</code> lists.' },
+    prefix: [['v:daily.temperature_2m_max[', 'That is the high for a later day. The first value, index <code>[0]</code>, is today.']] },
+  { id: 'feels', src: 'fc', q: 'Click the feels-like temperature.',
+    ans: 'v:current.apparent_temperature', path: 'forecast.current.apparent_temperature',
+    right: '"Feels like" is <code>apparent_temperature</code>. Your CurrentConditions panel shows it as 44°F.',
+    learn: '<code>current</code> holds the conditions right now. One of its keys is the feels-like number, but its name does not say "feels like."',
+    wrong: 'Look inside <code>current</code> for a temperature that is not the actual one.',
+    hints: { 'v:current.temperature_2m': 'That is the actual temperature, 48. Feels like is a different key in <code>current</code>.' } },
+  { id: 'code', src: 'fc', q: 'Your site turns a number into a word like "Overcast" with <code>describeWeather()</code>. Click today\'s number.',
+    ans: 'v:current.weather_code', path: 'forecast.current.weather_code',
+    right: '<code>describeWeather(3)</code> returns "Overcast." Your CurrentConditions panel reads the code inside <code>current</code>.',
+    learn: '<code>weather_code</code> is a number, and <code>describeWeather()</code> turns it into words. The CurrentConditions panel uses the one inside <code>current</code>; each ForecastCard uses one from the <code>daily</code> list.',
+    wrong: 'Look inside <code>current</code> for <code>weather_code</code>.',
+    hints: { 'v:daily.weather_code[0]': 'Close! That is today\'s code in the <code>daily</code> list, used by the first ForecastCard. The current conditions use the code inside <code>current</code>.' },
+    prefix: [['v:daily.weather_code[', 'That code is in the <code>daily</code> list, which feeds the ForecastCards. The current conditions use the code inside <code>current</code>.']] }
+];
+
+function renderJSON(obj) {
+  const lines = [];
+  const P = s => `<span class="p">${s}</span>`;
+  const lastKey = path => path.split('.').pop().replace(/\[\d+\]$/, '');
+  const line = (d, html) => lines.push(`<div class="ln" style="--d:${d}">${html}</div>`);
+  const prim = (v, path, label) => {
+    const cls = typeof v === 'string' ? 'str' : 'num';
+    const txt = typeof v === 'string' ? JSON.stringify(v) : String(v);
+    return `<button type="button" class="tok val ${cls}" data-tok="v:${path}" aria-label="${esc(label)}">${esc(txt)}</button>`;
+  };
+  const keyBtn = (k, path) => `<button type="button" class="tok key" data-tok="k:${path}" aria-label="key ${esc(k)}">"${esc(k)}"</button>`;
+  function walk(val, path, depth, keyHtml, comma) {
+    const pre = keyHtml ? keyHtml + P(': ') : '';
+    const cm = comma ? P(',') : '';
+    if (Array.isArray(val)) {
+      if (val.every(x => x === null || typeof x !== 'object')) {
+        const k = lastKey(path);
+        const items = val.map((x, i) => prim(x, `${path}[${i}]`, `${k} item ${i + 1} of ${val.length}, value ${x}`)).join(P(', '));
+        line(depth, pre + P('[') + items + P(']') + cm);
+      } else {
+        line(depth, pre + P('['));
+        val.forEach((x, i) => walk(x, `${path}[${i}]`, depth + 1, '', i < val.length - 1));
+        line(depth, P(']') + cm);
+      }
+    } else if (val && typeof val === 'object') {
+      line(depth, pre + P('{'));
+      const ks = Object.keys(val);
+      ks.forEach((k, i) => { const p = path ? `${path}.${k}` : k; walk(val[k], p, depth + 1, keyBtn(k, p), i < ks.length - 1); });
+      line(depth, P('}') + cm);
+    } else {
+      line(depth, pre + prim(val, path, `${lastKey(path)} value ${val}`) + cm);
+    }
+  }
+  walk(obj, '', 0, '', false);
+  return lines.join('');
+}
+
+const R2 = {
+  init() { play.order = shuffle(R2_ITEMS); play.idx = 0; play.answered = false; },
+  render() {
+    $('#round').innerHTML = shell(1, `
+      <p>Your site reads two JSON answers. Each question asks for one exact key or value. Every key and value below is a button: click it, tap it, or Tab to it and press Enter.</p>`) +
+      `<div id="r2-q"></div><div id="summary"></div>`;
+    R2.item(false);
+  },
+  item(focus) {
+    const it = play.order[play.idx];
+    const geo = it.src === 'geo';
+    const title = geo ? 'Geocoding response for 53818' : 'Forecast response for Platteville';
+    play.answered = false;
+    $('#r2-q').innerHTML = `<div class="qhead"><p class="qcount">Question ${play.idx + 1} of ${play.order.length}</p><p class="src-tag">${title}</p></div>
+      <p class="question" id="r2-question" tabindex="-1">${it.q}</p>
+      <div class="btn-row" style="margin-top:4px"><button type="button" class="btn-mini" data-learn>${ICON.bulb}Learn it</button></div>
+      <div id="r2-learn"></div>
+      <div class="json" id="json" role="group" aria-label="${title}. Each key and value is a button.">${renderJSON(geo ? GEO : FC)}</div>`;
+    if (focus) focusHeading($('#r2-question'));
+  },
+  hint(it, id) {
+    if (it.hints && it.hints[id]) return it.hints[id];
+    if (id === 'k:' + it.ans.slice(2)) return 'That is the key, the name of the field. Click the value right after it.';
+    if (it.prefix) for (const [p, msg] of it.prefix) if (id.startsWith(p)) return msg;
+    return it.wrong;
+  },
+  inline(tok, html) {
+    $$('.inline-fb', $('#json')).forEach(x => x.remove());
+    tok.closest('.ln').insertAdjacentHTML('afterend', `<div class="inline-fb">${html}</div>`);
+  },
+  onClick(e) {
+    const t = e.target, it = play.order[play.idx];
+    if (t.closest('[data-learn]')) { learnCard($('#r2-learn'), 'this question', `<p>${it.learn}</p>`, t.closest('[data-learn]')); return; }
+    if (t.closest('[data-next]')) {
+      if (play.idx < play.order.length - 1) { play.idx++; R2.item(true); }
+      else { $$('.inline-fb [data-next]').forEach(b => b.remove()); finishRound(firstTryScore()); }
+      return;
+    }
+    const tok = t.closest('.tok');
+    if (!tok || play.answered) return;
+    const id = tok.dataset.tok;
+    if (id === it.ans) {
+      play.answered = true; play.done.add(it.id);
+      tok.classList.add('correct');
+      tok.setAttribute('aria-label', tok.getAttribute('aria-label') + ', correct');
+      const last = play.idx === play.order.length - 1;
+      R2.inline(tok, card('right', 'Correct!', `<p>${it.right}</p><p class="path">JavaScript path: <code>${it.path}</code></p>`,
+        `<div class="btn-row"><button type="button" class="btn" data-next>${last ? 'Finish round' : 'Next question'}</button></div>`));
+      announce(`Correct! ${it.right} JavaScript path: ${it.path}`);
+      $('[data-next]').focus();
+    } else {
+      play.missed.add(it.id);
+      tok.classList.add('wrong');
+      if (!/, not this one$/.test(tok.getAttribute('aria-label'))) tok.setAttribute('aria-label', tok.getAttribute('aria-label') + ', not this one');
+      const msg = R2.hint(it, id);
+      R2.inline(tok, card('wrong', 'Not quite. Try again.', `<p>${msg}</p>`));
+      announce('Not quite. ' + msg);
+    }
+  }
+};
+
+/* ================= ROUND 3: Name That State ================= */
+const WX = (() => {
+  const s = b => `<svg class="wx" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${b}</svg>`;
+  const sun = (cx, cy, r) => `<circle cx="${cx}" cy="${cy}" r="${r}" fill="#f5a623" stroke="#d9820f" stroke-width="1"/>`;
+  const cloud = (fill, dy) => `<path transform="translate(0 ${dy || 0})" d="M7 18a4 4 0 0 1-.4-8 5.5 5.5 0 0 1 10.6 1.4A3.4 3.4 0 0 1 17 18z" fill="${fill}" stroke="#8b9bb0" stroke-width="1"/>`;
+  const drops = (c, n) => [6.5, 10.5, 14.5, 18].slice(0, n).map(x => `<path d="M${x} 19.5l-1 2.5" stroke="${c}" stroke-width="1.8" stroke-linecap="round"/>`).join('');
+  return {
+    clear: s(sun(12, 12, 6.5)),
+    mainly: s(sun(10, 10, 6) + '<path d="M13 19a3 3 0 0 1-.3-6 4 4 0 0 1 7.6 1A2.5 2.5 0 0 1 20 19z" fill="#e8eef5" stroke="#8b9bb0" stroke-width="1"/>'),
+    partly: s(sun(8.5, 8.5, 5.5) + cloud('#e8eef5', 1)),
+    overcast: s(cloud('#d5dde7', 0)),
+    lrain: s(cloud('#d5dde7', -3) + drops('#3d7fcc', 3)),
+    rain: s(cloud('#b9c5d3', -3) + drops('#1a64b7', 4)),
+    showers: s(sun(7, 6.5, 4.5) + cloud('#d5dde7', -2) + drops('#3d7fcc', 3))
+  };
+})();
+const DAYS = [
+  { d: 'Monday', dt: 'Oct 26', w: 'Overcast', i: 'overcast', hi: 52, lo: 38, p: 20 },
+  { d: 'Tuesday', dt: 'Oct 27', w: 'Light rain', i: 'lrain', hi: 49, lo: 40, p: 70, u: true },
+  { d: 'Wednesday', dt: 'Oct 28', w: 'Rain', i: 'rain', hi: 46, lo: 35, p: 85, u: true },
+  { d: 'Thursday', dt: 'Oct 29', w: 'Partly cloudy', i: 'partly', hi: 55, lo: 33, p: 15 },
+  { d: 'Friday', dt: 'Oct 30', w: 'Mainly clear', i: 'mainly', hi: 58, lo: 37, p: 5 },
+  { d: 'Saturday', dt: 'Oct 31', w: 'Clear sky', i: 'clear', hi: 61, lo: 42, p: 0 },
+  { d: 'Sunday', dt: 'Nov 1', w: 'Light rain showers', i: 'showers', hi: 54, lo: 41, p: 45 }
+];
+function replicaHTML(state) {
+  const busy = state === 'locating' || state === 'loading';
+  const val = state === 'idle' ? '' : '53818';
+  const msg = { idle: 'Enter a city or ZIP code to see the weather.', locating: 'Finding location...', loading: 'Loading weather...', success: '' }[state];
+  let h = `<div class="replica"><p class="rp-h1">Weather App</p>
+    <div class="rp-search"><span class="rp-label">City or ZIP code</span>
+      <div class="rp-row"><span class="rp-input"><span class="sr-only">Text box: </span>${val ? esc(val) : '<span class="sr-only">empty</span>'}</span>
+      <span class="rp-btn ${busy ? 'off' : ''}">Search${busy ? ' <span class="rp-off">off</span>' : '<span class="sr-only"> button, on</span>'}</span></div></div>`;
+  if (msg) h += `<p class="rp-status"><span class="sr-only">Message: </span>${msg}</p>`;
+  if (state === 'success') {
+    h += `<div class="rp-panel"><p class="rp-h2">Current conditions in Platteville, Wisconsin</p>
+      <span class="rp-temp">48°F</span><p class="rp-desc">${WX.overcast}Overcast</p>
+      <div class="rp-tiles"><div class="rp-tile">Feels like<strong>44°F</strong></div><div class="rp-tile">Humidity<strong>71%</strong></div><div class="rp-tile">Wind<strong>12 mph</strong></div></div></div>
+      <p class="rp-fh">7-day forecast</p>
+      <div class="rp-cards">${DAYS.map(x => `<div class="rp-card"><span class="rp-day">${x.d}</span><span class="rp-date">${x.dt}</span><span class="rp-w">${WX[x.i]}<span>${x.w}</span></span><span>High ${x.hi}°F / Low ${x.lo}°F</span><span>Chance of precipitation: ${x.p}%</span>${x.u ? `<span class="rp-badge">${ICON.umbrella}Bring an umbrella</span>` : ''}</div>`).join('')}</div>
+      <p class="rp-attr"><span class="rp-link">Weather data by Open-Meteo.com</span><span class="rp-link">CC BY 4.0</span></p>`;
+  }
+  return h + '</div>';
+}
+const STATES = ['idle', 'locating', 'loading', 'success'];
+const STATE_RIGHT = {
+  idle: 'Idle is where the site starts. The text box is empty, Search is on, and the message invites you to type.',
+  locating: 'Locating means the geocoding request is out, finding the place. Search is off and the message says "Finding location..."',
+  loading: 'Loading means the place was found and the forecast request is out. Search is still off and the message says "Loading weather..."',
+  success: 'Success means both answers came back. There is no message, the weather panels and credit links show, and Search is back on.'
+};
+const STATE_LOOKS = {
+  idle: 'In idle, the text box is empty and the message says "Enter a city or ZIP code to see the weather."',
+  locating: 'In locating, Search is off and the message says "Finding location..."',
+  loading: 'In loading, Search is off and the message says "Loading weather..."',
+  success: 'In success, there is no message and the weather panels show.'
+};
+const R3_ITEMS = [
+  { id: 'st-idle', kind: 'state', screen: 'idle' },
+  { id: 'st-locating', kind: 'state', screen: 'locating' },
+  { id: 'st-loading', kind: 'state', screen: 'loading' },
+  { id: 'st-success', kind: 'state', screen: 'success' },
+  { id: 'button', kind: 'mc', screen: 'loading', q: 'Is the Search button on or off right now, and why?',
+    choices: [
+      { t: 'Off. <code>disabled</code> is true while <code>status</code> is locating or loading, so a second search cannot get mixed up with the first.', ok: true },
+      { t: 'On, because the form is still on screen.', why: 'The form stays on screen in every state, but that does not make Search on. Look at the button: it is grayed out and marked off.' },
+      { t: 'Off, because the text box is empty.', why: 'The text box shows 53818, so it is not empty. Search is off because of <code>status</code>, not the text box.' },
+      { t: 'On, because the first request already finished.', why: 'The first request finished, but the second one is still running. Search stays off until <code>status</code> is success.' }
+    ],
+    right: 'Search\'s on/off is derived from <code>status</code>. While status is locating or loading, <code>disabled</code> is true, so one search finishes before another can start.',
+    learn: 'The Search button\'s on/off is not stored as its own value. React works it out from <code>status</code> every time the screen draws.' },
+  { id: 'request', kind: 'mc', screen: 'locating', q: 'Which request is running right now?',
+    choices: [
+      { t: 'The geocoding request, finding the place.', ok: true },
+      { t: 'The forecast request.', why: 'The forecast request comes second. It cannot start until the place is found, and "Finding location..." says the first request is still running.' },
+      { t: 'Both requests at the same time.', why: 'The forecast needs the latitude and longitude from the first answer, so the two requests run one after the other.' },
+      { t: 'No request; the site is waiting for the user.', why: 'That would be idle. "Finding location..." and a Search button that is off mean a request is running.' }
+    ],
+    right: 'Locating means request 1 is out: geocoding turns 53818 into Platteville and its coordinates.',
+    learn: 'Each busy state lines up with one request: locating runs the geocoding request, and loading runs the forecast request.' }
+];
+const R3 = {
+  init() {
+    play.order = shuffle(R3_ITEMS); play.idx = 0;
+    play.corders = {};
+    R3_ITEMS.forEach(it => { if (it.kind === 'mc') play.corders[it.id] = shuffle(it.choices.map((c, i) => i)); });
+  },
+  render() {
+    $('#round').innerHTML = shell(2, `<p>Here is a copy of the weather site you built in Lab 9, caught at different moments. Look at the screen, then answer.</p>`) +
+      `<div id="r3-q"></div><div id="summary"></div>`;
+    R3.item(false);
+  },
+  item(focus) {
+    const it = play.order[play.idx];
+    play.answered = false;
+    const q = it.kind === 'state' ? 'Which state is the site in?' : it.q;
+    const choices = it.kind === 'state'
+      ? STATES.map((s, i) => choiceHTML(i, `<code>${s}</code>`)).join('')
+      : play.corders[it.id].map(i => choiceHTML(i, it.choices[i].t)).join('');
+    $('#r3-q').innerHTML = `<p class="qcount">Question ${play.idx + 1} of ${play.order.length}</p>
+      <p class="question" id="r3-question" tabindex="-1">${q}</p>
+      <div class="r3-site" role="group" aria-label="The Lab 9 site right now"><p class="small muted" style="margin:0 0 6px" aria-hidden="true">The Lab 9 site right now:</p>${replicaHTML(it.screen)}</div>
+      <div class="r3-ask"><p class="small" style="margin:10px 0 0" aria-hidden="true"><strong>Your answer:</strong> ${q}</p>
+        <div class="choices ${it.kind === 'state' ? 'state-choices' : ''}" role="group" aria-labelledby="r3-question">${choices}</div>
+        <div class="btn-row"><button type="button" class="btn-mini" data-learn>${ICON.bulb}Learn it</button></div>
+        <div id="fb"></div></div>`;
+    if (focus) focusHeading($('#r3-question'));
+  },
+  onClick(e) {
+    const t = e.target, it = play.order[play.idx], fb = $('#fb');
+    if (t.closest('[data-learn]')) {
+      const body = it.kind === 'state'
+        ? '<p>An interface state is one situation the screen can be in. Check two clues: the message under the form, and whether Search is on or off. In success, the weather replaces the message.</p>'
+        : `<p>${it.learn}</p>`;
+      learnCard(fb, 'this question', body, t.closest('[data-learn]'));
+      return;
+    }
+    if (t.closest('[data-next]')) {
+      if (play.idx < play.order.length - 1) { play.idx++; R3.item(true); }
+      else { t.closest('[data-next]').remove(); finishRound(firstTryScore()); }
+      return;
+    }
+    const btn = t.closest('[data-choice]');
+    if (!btn || play.answered || btn.disabled) return;
+    const idx = +btn.dataset.choice;
+    let ok, rightText, wrongText;
+    if (it.kind === 'state') {
+      ok = STATES[idx] === it.screen;
+      rightText = STATE_RIGHT[it.screen];
+      wrongText = `You picked ${STATES[idx]}. ${STATE_LOOKS[STATES[idx]]} Look again at the message under the form and the Search button.`;
+    } else {
+      ok = !!it.choices[idx].ok; rightText = it.right; wrongText = it.choices[idx].why;
+    }
+    if (ok) {
+      play.answered = true; play.done.add(it.id); markChoice(btn, true);
+      const last = play.idx === play.order.length - 1;
+      showCard(fb, 'right', 'Correct!', `<p>${rightText}</p>`, `<div class="btn-row"><button type="button" class="btn" data-next>${last ? 'Finish round' : 'Next question'}</button></div>`);
+      $('[data-next]').focus();
+    } else {
+      play.missed.add(it.id); markChoice(btn, false);
+      showCard(fb, 'wrong', 'Not quite. Try again.', `<p>${wrongText}</p>`);
+    }
+  }
+};
+
+/* ================= ROUND 4: Race the Requests ================= */
+const STEPS = [
+  { id: 1, text: 'As you type, <code>onChange</code> saves each keystroke in LocationSearch\'s own state.',
+    learn: '<code>onChange</code> runs on every keystroke, but it only saves the text in LocationSearch\'s state. No request goes out while you type.',
+    hint: 'Everything starts with typing. Nothing can be searched before there is text.' },
+  { id: 2, text: 'You press Enter. The form\'s <code>onSubmit</code> runs, and <code>preventDefault()</code> stops the page from reloading.',
+    learn: '<code>onSubmit</code> runs once, when you press Enter or click Search. Without <code>preventDefault()</code>, the browser would reload the page and wipe out React\'s state.',
+    hint: 'The search starts when you press Enter, right after you finish typing.' },
+  { id: 3, text: 'LocationSearch calls <code>onSearch("53818")</code>, reporting the search up to App.',
+    learn: 'The child reports and the parent decides. LocationSearch does not fetch anything. It hands the text up to App through the <code>onSearch</code> prop.',
+    hint: 'After the form submits, the child reports the search up to its parent.' },
+  { id: 4, text: 'App sets <code>status</code> to "locating," and the Search button turns off.',
+    learn: 'App changes <code>status</code> first. That one change shows "Finding location..." and turns Search off before any waiting starts.',
+    hint: 'App changes status before it starts waiting on any request.' },
+  { id: 5, text: '<code>await fetch</code> asks the geocoding endpoint for 53818 and waits for the answer.',
+    learn: '<code>await</code> waits for the answer without freezing the page. The geocoding endpoint turns 53818 into a place with a latitude and longitude.',
+    hint: 'The first request finds the place.' },
+  { id: 6, text: 'App saves the first result as <code>place</code> and sets <code>status</code> to "loading."',
+    learn: '<code>results[0]</code> is the first match. Saving it as <code>place</code> and setting <code>status</code> to "loading" changes the message to "Loading weather..."',
+    hint: 'The place has to be saved before its numbers can be used.' },
+  { id: 7, text: '<code>await fetch</code> asks the forecast endpoint for <code>place</code>\'s latitude and longitude and waits.',
+    learn: 'The forecast address needs latitude and longitude. Those numbers only exist after the geocoding answer arrives.',
+    hint: 'The forecast needs latitude and longitude, so it runs after the place is saved.' },
+  { id: 8, text: 'App saves the forecast and sets <code>status</code> to "success." The weather and credit links appear, and Search turns back on.',
+    learn: 'One state change, <code>status</code> to "success," makes the weather panels and credit links appear and turns Search back on.',
+    hint: 'Success comes last, after both answers are back.' }
+];
+const stepById = id => STEPS.find(s => s.id === id);
+const R4_Q = {
+  q: 'Why can\'t both requests start at the same time?',
+  choices: [
+    { t: 'The forecast needs the latitude and longitude that the first answer sends back.', ok: true },
+    { t: 'Open-Meteo only allows one request per minute.', why: 'Open-Meteo allows many requests. The real reason is the data: the forecast address needs numbers from the first answer.' },
+    { t: 'React can only run one fetch per component.', why: 'A component can run as many fetches as it likes. The second request waits because it needs numbers from the first answer.' },
+    { t: 'The Search button is off.', why: 'The button being off stops you from starting a second search. It does not decide the order of the two requests.' }
+  ],
+  right: 'The second request is built from the first answer. Until geocoding sends back latitude and longitude, there is nothing to put in the forecast address.',
+  learn: 'Think about what the forecast address needs, and where those numbers come from.'
+};
+const R4 = {
+  init() {
+    let o;
+    do { o = shuffle(STEPS.map(s => s.id)); } while (o.filter((id, i) => id === i + 1).length > 2);
+    play.order = o; play.marks = {}; play.checked = false; play.stepScore = 0; play.solved = false;
+    play.qorder = shuffle(R4_Q.choices.map((c, i) => i)); play.qMissed = false; play.qDone = false;
+  },
+  render() {
+    $('#round').innerHTML = shell(3, `<p>You type <strong>53818</strong> and press Enter. Put what happens in order.</p>
+      <p class="howto"><strong>How to play:</strong> drag a step by its dotted handle, or use its <strong>Up</strong> and <strong>Down</strong> buttons. When you think the order is right, choose <strong>Check order</strong>. Your first check is the one that counts.</p>`) +
+      `<ol class="steps" id="steps" aria-label="Steps in your current order"></ol>
+       <div class="btn-row" id="r4-check-row"><button type="button" class="btn" data-check>Check order</button></div>
+       <div id="fb"></div><div id="r4-after"></div><div id="summary"></div>`;
+    R4.list();
+  },
+  list() {
+    const ol = $('#steps'), n = play.order.length;
+    ol.classList.toggle('locked-list', play.solved);
+    ol.innerHTML = play.order.map((sid, i) => {
+      const s = stepById(sid), m = play.marks[sid];
+      const mark = m === 'ok' ? `<span class="mark">${ICON.check}Right spot</span>` : m === 'bad' ? `<span class="mark">${ICON.x}Wrong spot</span>` : '';
+      const moves = play.solved ? '' :
+        `<button type="button" class="btn-mini" data-move="up" aria-label="Move up" aria-describedby="st-${sid}" ${i === 0 ? 'disabled' : ''}>${ICON.up}Up</button>
+         <button type="button" class="btn-mini" data-move="down" aria-label="Move down" aria-describedby="st-${sid}" ${i === n - 1 ? 'disabled' : ''}>${ICON.down}Down</button>`;
+      return `<li class="step ${m || ''}" data-step="${sid}">
+        <span class="grip" aria-hidden="true" title="Drag to move">${ICON.grip}</span>
+        <span class="pos" aria-hidden="true">${i + 1}</span>
+        <p class="step-text" id="st-${sid}"><span class="sr-only">Position ${i + 1}: </span>${s.text}</p>
+        <div class="step-ctrl">${mark}<button type="button" class="btn-mini" data-learn-step aria-describedby="st-${sid}">${ICON.bulb}Learn it</button>${moves}</div>
+        <div class="step-learn"></div>
+      </li>`;
+    }).join('');
+  },
+  move(sid, dir) {
+    const i = play.order.indexOf(sid), j = dir === 'up' ? i - 1 : i + 1;
+    if (j < 0 || j >= play.order.length) return;
+    const other = play.order[j];
+    [play.order[i], play.order[j]] = [play.order[j], play.order[i]];
+    delete play.marks[sid]; delete play.marks[other];
+    R4.list();
+    const li = $(`.step[data-step="${sid}"]`);
+    let b = li.querySelector(`[data-move="${dir}"]`);
+    if (!b || b.disabled) b = li.querySelector('[data-move]:not([disabled])');
+    if (b) b.focus();
+    announce(`Moved to position ${j + 1} of ${play.order.length}.`);
+  },
+  check() {
+    const res = play.order.map((sid, i) => sid === i + 1);
+    const n = res.filter(Boolean).length;
+    if (!play.checked) { play.checked = true; play.stepScore = n; }
+    play.order.forEach((sid, i) => { play.marks[sid] = res[i] ? 'ok' : 'bad'; });
+    const fb = $('#fb');
+    if (n === play.order.length) {
+      play.solved = true;
+      R4.list();
+      $('#r4-check-row').innerHTML = '';
+      showCard(fb, 'right', 'Correct order!', `<p>Every step is in the right spot. On your first check, ${play.stepScore} of 8 steps were in the right spot.</p>`);
+      R4.after();
+    } else {
+      R4.list();
+      const k = res.indexOf(false);
+      showCard(fb, 'wrong', `${n} of 8 steps are in the right spot. Try again.`,
+        `<p>Fix the steps marked <strong>Wrong spot</strong>, then check again.</p><p>Hint for position ${k + 1}: ${stepById(k + 1).hint}</p>`);
+    }
+  },
+  after() {
+    $('#r4-after').innerHTML = `<h3 id="tl-h" tabindex="-1" style="margin-top:16px">Watch the two requests</h3>
+      <div class="timeline" role="group" aria-labelledby="tl-h">
+        <div class="lane"><p class="lane-label">Request 1: geocoding</p>
+          <div class="track" aria-hidden="true"><span class="seg out s1o"></span><span class="seg back s1b"></span></div>
+          <p class="lane-state" id="l1">Waiting</p></div>
+        <div class="lane"><p class="lane-label">Request 2: forecast</p>
+          <div class="track" aria-hidden="true"><span class="seg out s2o"></span><span class="seg back s2b"></span></div>
+          <p class="lane-state" id="l2">Waiting</p></div>
+        <div class="axis" aria-hidden="true"><span>You press Enter</span><span>time</span><span>Weather shows</span></div>
+        <p class="tl-key" aria-hidden="true"><span><span class="sw" style="background:#1a64b7"></span>Solid: request going out</span><span><span class="sw" style="background:repeating-linear-gradient(135deg,#1a64b7 0 4px,#5e93cf 4px 8px)"></span>Striped: answer coming back</span></p>
+        <p class="tl-status">App status: <code id="tl-st">idle</code></p>
+      </div>
+      <div class="btn-row"><button type="button" class="btn-mini" data-replay-tl>${ICON.play}Replay the timeline</button></div>
+      <div style="margin-top:18px"><p class="question" id="r4q">${R4_Q.q}</p>
+        <div class="choices" role="group" aria-labelledby="r4q">${play.qorder.map(i => choiceHTML(i, R4_Q.choices[i].t)).join('')}</div>
+        <div class="btn-row"><button type="button" class="btn-mini" data-learn-q>${ICON.bulb}Learn it</button></div>
+        <div id="fb2"></div></div>`;
+    focusSoft($('#tl-h'));
+    R4.timeline();
+  },
+  timeline() {
+    play.timers.forEach(t => clearTimeout(t)); play.timers = [];
+    const segs = ['.s1o', '.s1b', '.s2o', '.s2b'].map(s => $(s));
+    const l1 = $('#l1'), l2 = $('#l2'), st = $('#tl-st');
+    const done1 = 'Done. Answer back: Platteville, 42.73416, -90.47846', done2 = 'Done. Answer back: the 7-day forecast';
+    if (reduceMotion()) {
+      segs.forEach(s => s.classList.add('full'));
+      l1.textContent = done1; l2.textContent = done2; st.textContent = 'success';
+      announce('Timeline: request 1, geocoding, finished before request 2, forecast, started.');
+      return;
+    }
+    segs.forEach(s => { s.style.transition = 'none'; s.classList.remove('full'); void s.offsetWidth; s.style.transition = ''; });
+    l1.textContent = 'Waiting'; l2.textContent = 'Waiting'; st.textContent = 'idle';
+    const steps = [
+      () => { st.textContent = 'locating'; l1.textContent = 'Sending 53818 to the geocoding endpoint...'; l2.textContent = 'Waiting for latitude and longitude from request 1'; segs[0].classList.add('full'); },
+      () => { l1.textContent = 'Answer coming back...'; segs[1].classList.add('full'); },
+      () => { l1.textContent = done1; st.textContent = 'loading'; l2.textContent = 'Sending latitude and longitude to the forecast endpoint...'; segs[2].classList.add('full'); },
+      () => { l2.textContent = 'Answer coming back...'; segs[3].classList.add('full'); },
+      () => { l2.textContent = done2; st.textContent = 'success'; announce('Timeline finished: request 1 came back before request 2 started.'); }
+    ];
+    steps.forEach((fn, k) => play.timers.push(setTimeout(fn, 300 + k * 1000)));
+  },
+  onClick(e) {
+    const t = e.target;
+    const li = t.closest('.step');
+    if (t.closest('[data-learn-step]') && li) {
+      const s = stepById(+li.dataset.step);
+      learnCard(li.querySelector('.step-learn'), 'this step', `<p>${s.learn}</p>`, t.closest('[data-learn-step]'));
+      return;
+    }
+    const mv = t.closest('[data-move]');
+    if (mv && li) { R4.move(+li.dataset.step, mv.dataset.move); return; }
+    if (t.closest('[data-check]')) { R4.check(); return; }
+    if (t.closest('[data-replay-tl]')) { R4.timeline(); return; }
+    if (t.closest('[data-learn-q]')) { learnCard($('#fb2'), 'this question', `<p>${R4_Q.learn}</p>`, t.closest('[data-learn-q]')); return; }
+    const btn = t.closest('[data-choice]');
+    if (btn && !play.qDone && !btn.disabled) {
+      const c = R4_Q.choices[+btn.dataset.choice];
+      if (c.ok) {
+        play.qDone = true; markChoice(btn, true);
+        showCard($('#fb2'), 'right', 'Correct!', `<p>${R4_Q.right}</p>`);
+        finishRound(play.stepScore + (play.qMissed ? 0 : 1));
+      } else {
+        play.qMissed = true; markChoice(btn, false);
+        showCard($('#fb2'), 'wrong', 'Not quite. Try again.', `<p>${c.why}</p>`);
+      }
+    }
+  }
+};
+
+/* Drag to reorder (mouse, pen, and touch on the handle) */
+let sdrag = null;
+document.addEventListener('pointerdown', e => {
+  if (game.active !== 3 || !play || play.solved) return;
+  const grip = e.target.closest && e.target.closest('#steps .grip');
+  if (!grip || (e.pointerType === 'mouse' && e.button !== 0)) return;
+  e.preventDefault();
+  const li = grip.closest('.step');
+  sdrag = { li, before: play.order.slice() };
+  li.classList.add('dragging');
+  document.body.classList.add('is-dragging');
+});
+document.addEventListener('pointermove', e => {
+  if (!sdrag) return;
+  e.preventDefault();
+  const under = document.elementFromPoint(e.clientX, e.clientY);
+  const target = under && under.closest('#steps .step');
+  if (!target || target === sdrag.li) return;
+  const r = target.getBoundingClientRect();
+  const ol = $('#steps');
+  if (e.clientY < r.top + r.height / 2) ol.insertBefore(sdrag.li, target);
+  else ol.insertBefore(sdrag.li, target.nextSibling);
+}, { passive: false });
+function endStepDrag() {
+  if (!sdrag) return;
+  const d = sdrag; sdrag = null;
+  document.body.classList.remove('is-dragging');
+  d.li.classList.remove('dragging');
+  const ids = $$('#steps .step').map(x => +x.dataset.step);
+  ids.forEach((id, i) => { if (d.before[i] !== id) { delete play.marks[id]; delete play.marks[d.before[i]]; } });
+  const moved = +d.li.dataset.step;
+  play.order = ids;
+  R4.list();
+  if (d.before.join() !== ids.join()) announce(`Moved to position ${ids.indexOf(moved) + 1} of ${ids.length}.`);
+}
+document.addEventListener('pointerup', endStepDrag);
+document.addEventListener('pointercancel', endStepDrag);
+
+/* ================= ROUND 5: Prompt Doctor ================= */
+const LINES = {
+  A: { t: 'Use these names: status, one value in App. It goes idle, then locating, then loading, then success.', fixes: 'names the status value and lists its four steps' },
+  B: { t: 'LocationSearch calls onSearch with the trimmed text when the form is submitted.', fixes: 'makes the search run once, when the form is submitted' },
+  C: { t: 'Not yet: No error handling. Don\'t edit CurrentConditions, ForecastList, or ForecastCard.', fixes: 'keeps Claude Code from adding extra features or touching working components' },
+  D: { t: 'Plan only. Don\'t change any files.', fixes: 'asks for a plan before any file changes' },
+  E: { t: 'Add the Attribution component from CLAUDE.md.', fixes: 'adds the data credit to the page' },
+  F: { t: 'disabled: true while status is locating or loading.', fixes: 'turns Search off while a search is running' },
+  G: { t: 'Use countryCode=US so a ZIP code matches a place in the United States.', fixes: 'makes a ZIP code match a place in the United States' },
+  H: { t: 'Save the first result as place, then fetch the forecast with place\'s latitude and longitude.', fixes: 'chains the two requests so the forecast uses the place\'s coordinates' },
+  I: { t: 'Show "Finding location..." while status is locating and "Loading weather..." while status is loading.', fixes: 'shows the right message for each busy state' },
+  J: { t: 'Use temperature_unit=fahrenheit and forecast_days=7 in the forecast request.', fixes: 'sets °F and seven forecast days' },
+  K: { t: 'Keep the text box value in LocationSearch\'s own state with onChange.', fixes: 'saves what you type in LocationSearch\'s own state, without sending anything' }
+};
+const R5_ITEMS = [
+  { id: 'p1', did: 'Claude Code called the status <code>isBusy</code>. Your next prompt says <code>status</code>, and now nothing matches.',
+    ans: 'A', wrong: ['F', 'I', 'K'], part: 'Use these names',
+    why: 'Naming <code>status</code> and its four values means every later prompt and every component use the same word, so the steps connect.',
+    clue: 'Here the trouble is a name that changed between prompts.',
+    learn: 'When later steps depend on a name, write that exact name in the prompt so Claude Code does not invent its own.' },
+  { id: 'p2', did: 'Claude Code sends a search on every keystroke. Typing "Platteville" sends eleven requests.',
+    ans: 'B', wrong: ['K', 'F', 'D'], part: 'Goal',
+    why: 'Tying the search to the form submit means typing only saves text, and one search goes out when you press Enter or click Search.',
+    clue: 'Here the trouble is when the search runs.',
+    learn: 'Think about when a search should run: on every keystroke, or once when the form is submitted?' },
+  { id: 'p3', did: 'You asked for a search form, and Claude Code also added error messages and rewrote ForecastCard.',
+    ans: 'C', wrong: ['D', 'E', 'B'], part: 'Not yet',
+    why: 'Not yet keeps one step to one small, checkable change. Saying "no error handling" and naming the components to leave alone stops the extra work.',
+    clue: 'Here the trouble is extra work you did not ask for.',
+    learn: 'A prompt can say what to do, and also what to leave for later.' },
+  { id: 'p4', did: 'You asked Claude Code for a plan, and it started changing files.',
+    ans: 'D', wrong: ['C', 'A', 'H'], part: 'Goal',
+    why: 'Making the goal a plan, with no file changes, lets you read and approve the plan before any code changes.',
+    clue: 'Here the trouble is that files changed before you saw a plan.',
+    learn: 'Your Goal does not have to be code. It can be a plan you read first.' },
+  { id: 'p5', did: 'The weather loads, but there is no credit for the data.',
+    ans: 'E', wrong: ['J', 'I', 'C'], part: 'Use these names',
+    why: 'Naming the Attribution component from CLAUDE.md tells Claude Code exactly which piece to add, so the Open-Meteo credit and license links appear.',
+    clue: 'Here the trouble is a missing piece of the page.',
+    learn: 'CLAUDE.md lists the components your site uses. Naming one tells Claude Code exactly what to add.' },
+  { id: 'p6', did: 'The Search button stays on while the weather loads, so a second search can get mixed up with the first.',
+    ans: 'F', wrong: ['A', 'B', 'I'], part: 'Use these names',
+    why: 'Search\'s on/off is derived from <code>status</code>. Off while locating or loading means one search finishes before another can start.',
+    clue: 'Here the trouble is the Search button during a search.',
+    learn: 'The Search button\'s on/off can be worked out from <code>status</code>.' }
+];
+const R5 = {
+  init() {
+    play.order = shuffle(R5_ITEMS); play.idx = 0;
+    play.corders = {};
+    R5_ITEMS.forEach(it => { play.corders[it.id] = shuffle([it.ans].concat(it.wrong)); });
+  },
+  render() {
+    $('#round').innerHTML = shell(4, `<p>Each Lab 9 prompt has three parts. Match the prompt line to the problem it would have prevented.</p>
+      <div class="parts">
+        <div class="part"><strong>Goal</strong>What the user sees change.</div>
+        <div class="part"><strong>Use these names</strong>The names later steps depend on.</div>
+        <div class="part"><strong>Not yet</strong>What to leave for later.</div>
+      </div>`) + `<div id="r5-q"></div><div id="summary"></div>`;
+    R5.item(false);
+  },
+  item(focus) {
+    const it = play.order[play.idx];
+    play.answered = false;
+    $('#r5-q').innerHTML = `<p class="qcount">Question ${play.idx + 1} of ${play.order.length}</p>
+      <div class="did"><p class="did-title">${ICON.robot}What Claude Code did</p><p style="margin:0">${it.did}</p></div>
+      <p class="question" id="r5-question" tabindex="-1">Which line would have prevented this?</p>
+      <div class="choices" role="group" aria-labelledby="r5-question">${play.corders[it.id].map(k => choiceHTML(k, esc(LINES[k].t), 'prompt-line')).join('')}</div>
+      <div class="btn-row"><button type="button" class="btn-mini" data-learn>${ICON.bulb}Learn it</button></div>
+      <div id="fb"></div>`;
+    if (focus) focusHeading($('#r5-question'));
+  },
+  onClick(e) {
+    const t = e.target, it = play.order[play.idx], fb = $('#fb');
+    if (t.closest('[data-learn]')) { learnCard(fb, 'this question', `<p>${it.learn}</p>`, t.closest('[data-learn]')); return; }
+    if (t.closest('[data-next]')) {
+      if (play.idx < play.order.length - 1) { play.idx++; R5.item(true); }
+      else { t.closest('[data-next]').remove(); finishRound(firstTryScore()); }
+      return;
+    }
+    const btn = t.closest('[data-choice]');
+    if (!btn || play.answered || btn.disabled) return;
+    const k = btn.dataset.choice;
+    if (k === it.ans) {
+      play.answered = true; play.done.add(it.id); markChoice(btn, true);
+      const last = play.idx === play.order.length - 1;
+      showCard(fb, 'right', 'Correct!', `<p class="part-badge">This line belongs in: ${it.part}</p><p>${it.why}</p>`,
+        `<div class="btn-row"><button type="button" class="btn" data-next>${last ? 'Finish round' : 'Next question'}</button></div>`);
+      $('[data-next]').focus();
+    } else {
+      play.missed.add(it.id); markChoice(btn, false);
+      showCard(fb, 'wrong', 'Good line, different problem. Try again.', `<p>This line ${LINES[k].fixes}. ${it.clue}</p>`);
+    }
+  }
+};
+
+const IMPL = [R1, R2, R3, R4, R5];
+
+/* ================= Results and certificate ================= */
+const SECRET = 'apc440|m9|live-data|geo-then-forecast|sky-7c41';
+function normName(n) { return String(n).trim().replace(/\s+/g, ' ').toLowerCase(); }
+function fnv1a(bytes, seed) { let h = seed >>> 0; for (let i = 0; i < bytes.length; i++) { h ^= bytes[i]; h = Math.imul(h, 0x01000193) >>> 0; } return h >>> 0; }
+function makeCode(name, scores, ts) {
+  const s = [normName(name), scores.join(','), String(ts).trim(), SECRET].join('|');
+  const bytes = new TextEncoder().encode(s);
+  const a = fnv1a(bytes, 0x811c9dc5);
+  const b = fnv1a(bytes, (a ^ 0x5bd1e995) >>> 0);
+  const n = (BigInt(a) << 32n) | BigInt(b);
+  return (n % (36n ** 8n)).toString(36).toUpperCase().padStart(8, '0');
+}
+function stamp(d) {
+  const p = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+}
+function safeFile(n) {
+  let s;
+  try { s = n.trim().replace(/\s+/g, '-').replace(/[^\p{L}\p{N}_-]/gu, ''); }
+  catch (e) { s = n.trim().replace(/\s+/g, '-').replace(/[^A-Za-z0-9_-]/g, ''); }
+  return s || 'student';
+}
+
+function renderResults() {
+  const sec = $('#results');
+  const doneCount = game.finished.filter(Boolean).length;
+  if (doneCount < 5) {
+    sec.innerHTML = `<h2 id="results-h" tabindex="-1">Your results</h2>
+      <div class="locked-box">${ICON.lock}<p><strong>Locked.</strong> Finish all five rounds to unlock your results. You have finished ${doneCount} of 5.</p></div>`;
+    return;
+  }
+  const total = game.best.reduce((s, b) => s + b, 0);
+  const perfect = total === GRAND_TOTAL;
+  const name = loadName();
+  sec.innerHTML = `<h2 id="results-h" tabindex="-1">Your results</h2>
+    <p>Here is your best first-try score for each round.</p>
+    <table class="score-table"><caption class="sr-only">Best first-try score for each round</caption>
+      <thead><tr><th scope="col">Round</th><th scope="col" style="text-align:right">Best score</th></tr></thead>
+      <tbody>${ROUNDS.map((r, i) => `<tr><th scope="row">Round ${i + 1}: ${r.name}</th><td>${game.best[i] === r.total ? `${ICON.star}<span class="sr-only">Perfect. </span>` : ''} ${game.best[i]} of ${r.total}</td></tr>`).join('')}</tbody>
+      <tfoot><tr><th scope="row">Total</th><td>${total} of ${GRAND_TOTAL}</td></tr></tfoot>
+    </table>
+    ${perfect ? `<p class="badge-perfect">${ICON.star}Perfect score</p>` : '<p>Want a perfect score? Replay any round from the progress tiles above. Only your best counts.</p>'}
+    <div class="field"><label for="student-name">Your name</label>
+      <input id="student-name" type="text" autocomplete="name" maxlength="60" value="${esc(name)}" aria-describedby="name-help"></div>
+    <p class="small muted" id="name-help" style="margin-top:-6px">Type your name to turn on the Save button.</p>
+    <div class="btn-row"><button type="button" class="btn" id="save-btn" ${name.trim() ? '' : 'disabled'}>${ICON.download}Save my results</button></div>
+    <p><strong>Upload this image to the Module 9 Show What You Know assignment in Canvas.</strong></p>
+    <div id="save-out"></div>
+    <div class="btn-row"><button type="button" class="btn secondary" data-reset>Play again from the start</button></div>
+    <div class="reset-confirm"></div>`;
+}
+
+function rr(g, x, y, w, h, r) {
+  g.beginPath(); g.moveTo(x + r, y); g.lineTo(x + w - r, y); g.quadraticCurveTo(x + w, y, x + w, y + r);
+  g.lineTo(x + w, y + h - r); g.quadraticCurveTo(x + w, y + h, x + w - r, y + h); g.lineTo(x + r, y + h);
+  g.quadraticCurveTo(x, y + h, x, y + h - r); g.lineTo(x, y + r); g.quadraticCurveTo(x, y, x + r, y); g.closePath();
+}
+function drawStar(g, cx, cy, r, fill, stroke) {
+  g.beginPath();
+  for (let i = 0; i < 10; i++) {
+    const a = -Math.PI / 2 + i * Math.PI / 5, rad = i % 2 ? r * 0.45 : r;
+    const x = cx + Math.cos(a) * rad, y = cy + Math.sin(a) * rad;
+    if (i) g.lineTo(x, y); else g.moveTo(x, y);
+  }
+  g.closePath(); g.fillStyle = fill; g.fill(); g.lineWidth = 1.5; g.strokeStyle = stroke; g.stroke();
+}
+function drawCert(name, scores, ts, code) {
+  const c = document.createElement('canvas'); c.width = 1200; c.height = 675;
+  const g = c.getContext('2d');
+  const F = 'system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif';
+  const M = 'Consolas, "Cascadia Mono", Menlo, "Courier New", monospace';
+  const total = scores.reduce((s, b) => s + b, 0), perfect = total === GRAND_TOTAL;
+  g.fillStyle = '#eef4fa'; g.fillRect(0, 0, 1200, 675);
+  rr(g, 30, 30, 1140, 615, 24); g.fillStyle = '#ffffff'; g.fill(); g.lineWidth = 2; g.strokeStyle = '#c9d6e3'; g.stroke();
+  g.save(); rr(g, 30, 30, 1140, 615, 24); g.clip(); g.fillStyle = '#1a64b7'; g.fillRect(30, 30, 1140, 92); g.restore();
+  g.fillStyle = '#f5b301'; g.beginPath(); g.arc(1086, 70, 20, 0, Math.PI * 2); g.fill();
+  g.fillStyle = '#ffffff'; g.beginPath(); g.arc(1104, 88, 14, 0, Math.PI * 2); g.arc(1122, 92, 11, 0, Math.PI * 2); g.arc(1088, 94, 10, 0, Math.PI * 2); g.fill(); g.fillRect(1088, 92, 34, 12);
+  g.textBaseline = 'alphabetic'; g.textAlign = 'left';
+  g.fillStyle = '#ffffff'; g.font = `700 30px ${F}`; g.fillText('APC 440 Module 9: Show What You Know', 70, 88);
+  g.fillStyle = '#1b2733'; g.font = `800 44px ${F}`; g.fillText('React Weather Lab 2: Live Data', 70, 182);
+  g.fillStyle = '#46566a'; g.font = `600 22px ${F}`; g.fillText('Completed by', 70, 226);
+  let size = 52; g.font = `800 ${size}px ${F}`;
+  while (g.measureText(name).width > 1060 && size > 22) { size -= 2; g.font = `800 ${size}px ${F}`; }
+  g.fillStyle = '#1a64b7'; g.fillText(name, 70, 282);
+  g.strokeStyle = '#c9d6e3'; g.lineWidth = 2; g.beginPath(); g.moveTo(70, 308); g.lineTo(1130, 308); g.stroke();
+  g.fillStyle = '#46566a'; g.font = `600 18px ${F}`; g.fillText('Best first-try score for each round', 70, 340);
+  ROUNDS.forEach((r, i) => {
+    const y = 380 + i * 38;
+    g.fillStyle = '#1b2733'; g.font = `500 23px ${F}`; g.textAlign = 'left'; g.fillText(`Round ${i + 1}: ${r.name}`, 70, y);
+    g.font = `800 23px ${F}`; g.textAlign = 'right'; g.fillText(`${scores[i]} of ${r.total}`, 620, y); g.textAlign = 'left';
+    if (scores[i] === r.total) { drawStar(g, 645, y - 8, 11, '#f2b100', '#6e4700'); g.fillStyle = '#6e4700'; g.font = `700 16px ${F}`; g.fillText('Perfect', 662, y - 2); }
+  });
+  g.fillStyle = '#1b2733'; g.font = `800 26px ${F}`; g.fillText(`Total: ${total} of ${GRAND_TOTAL} correct on the first try`, 70, 600);
+  rr(g, 770, 330, 360, 280, 16); g.fillStyle = '#f4f7fb'; g.fill(); g.strokeStyle = '#c9d6e3'; g.stroke();
+  if (perfect) {
+    drawStar(g, 812, 370, 20, '#f2b100', '#6e4700');
+    g.fillStyle = '#6e4700'; g.font = `800 28px ${F}`; g.fillText('Perfect score', 842, 380);
+  } else {
+    g.fillStyle = '#17692e'; g.font = `800 22px ${F}`; g.fillText('All five rounds finished', 796, 378);
+  }
+  g.fillStyle = '#46566a'; g.font = `600 18px ${F}`; g.fillText('Verification code', 796, 438);
+  g.fillStyle = '#1b2733'; g.font = `800 44px ${M}`; g.fillText(code, 796, 488);
+  g.fillStyle = '#46566a'; g.font = `600 18px ${F}`; g.fillText('Date and time', 796, 538);
+  g.fillStyle = '#1b2733'; g.font = `700 25px ${M}`; g.fillText(ts, 796, 574);
+  return c;
+}
+function saveResults() {
+  const input = $('#student-name');
+  const name = input.value.trim().replace(/\s+/g, ' ');
+  if (!name) { input.focus(); return; }
+  saveName(name);
+  const scores = game.best.slice(), ts = stamp(new Date()), code = makeCode(name, scores, ts);
+  const canvas = drawCert(name, scores, ts, code);
+  const fname = `Module9-SWYK-${safeFile(name)}.png`;
+  const dataURL = canvas.toDataURL('image/png');
+  const go = href => { const a = document.createElement('a'); a.href = href; a.download = fname; document.body.appendChild(a); a.click(); a.remove(); };
+  if (canvas.toBlob) {
+    canvas.toBlob(blob => { if (!blob) { go(dataURL); return; } const url = URL.createObjectURL(blob); go(url); setTimeout(() => URL.revokeObjectURL(url), 10000); }, 'image/png');
+  } else go(dataURL);
+  const total = scores.reduce((s, b) => s + b, 0);
+  $('#save-out').innerHTML = card('right', `Saved as ${esc(fname)}`,
+    `<p>Verification code: <span class="code-out">${code}</span></p>
+     <p>Date and time: <span class="mono">${ts}</span></p>
+     <p class="small">Check your Downloads folder. If the download did not start, right-click (or press and hold) the image below and save it.</p>
+     <img class="cert-preview" src="${dataURL}" alt="Your certificate: ${esc(name)}, ${total} of ${GRAND_TOTAL} correct on the first try, verification code ${code}.">`);
+  announce(`Saved as ${fname}. Your verification code is ${code.split('').join(' ')}.`);
+  focusSoft($('#save-out .concept'));
+}
+
+/* ================= Reset ================= */
+function askReset(btn) {
+  const box = btn.closest('section').querySelector('.reset-confirm');
+  box.innerHTML = card('learn', 'Start over?', '<p>This clears every round score and starts again at Round 1. Your name stays.</p>',
+    '<div class="btn-row"><button type="button" class="btn" data-reset-yes>Yes, start over</button><button type="button" class="btn secondary" data-reset-no>Cancel</button></div>');
+  announce('Start over? This clears every round score and starts again at Round 1.');
+  box.querySelector('[data-reset-no]').focus();
+}
+function doReset() {
+  clearTimers();
+  game.best = [null, null, null, null, null]; game.finished = [false, false, false, false, false];
+  $$('.reset-confirm').forEach(b => { b.innerHTML = ''; });
+  renderResults();
+  startRound(0, true);
+  announce('Everything is reset. Round 1 is ready.');
+}
+
+/* ================= Events ================= */
+function initGame() {
+  $('#tiles').addEventListener('click', e => {
+    const b = e.target.closest('[data-round]');
+    if (!b || b.disabled) return;
+    const i = +b.dataset.round;
+    if (i === game.active) { focusHeading($('#round-h')); return; }
+    startRound(i, true);
+  });
+  $('#round').addEventListener('click', e => {
+    const t = e.target;
+    const close = t.closest('[data-close-card]');
+    if (close) {
+      const c = close.closest('.concept'), ret = play.learnReturn;
+      c.remove(); play.learnReturn = null;
+      if (ret && document.contains(ret)) ret.focus();
+      return;
+    }
+    if (t.closest('[data-continue]')) {
+      const i = game.active;
+      if (i < 4) startRound(i + 1, true); else focusHeading($('#results-h'));
+      return;
+    }
+    if (t.closest('[data-replay]')) { startRound(game.active, true); return; }
+    IMPL[game.active].onClick(e);
+  });
+  document.addEventListener('click', e => {
+    const t = e.target;
+    const r = t.closest('[data-reset]');
+    if (r) { askReset(r); return; }
+    if (t.closest('[data-reset-yes]')) { doReset(); return; }
+    const no = t.closest('[data-reset-no]');
+    if (no) { const sec = no.closest('section'); no.closest('.reset-confirm').innerHTML = ''; const back = sec.querySelector('[data-reset]'); if (back) back.focus(); return; }
+    if (t.closest('#save-btn')) saveResults();
+  });
+  $('#results').addEventListener('input', e => {
+    if (e.target.id !== 'student-name') return;
+    saveName(e.target.value.trim());
+    $('#save-btn').disabled = !e.target.value.trim();
+  });
+  $('#results').addEventListener('keydown', e => {
+    if (e.target.id === 'student-name' && e.key === 'Enter' && e.target.value.trim()) { e.preventDefault(); saveResults(); }
+  });
+  renderResults();
+  startRound(0, false);
+}
+
+/* ================= Instructor check (?verify) ================= */
+function initVerify() {
+  document.title = 'Instructor check: React Weather Lab 2';
+  $('#main').innerHTML = `<section class="card" aria-labelledby="v-h">
+    <h2 id="v-h">Instructor check</h2>
+    <p>Type the details exactly as they appear on the student's certificate. Capital letters and extra spaces in the name do not matter. The date and time must match exactly, including seconds.</p>
+    <form id="vform" novalidate>
+      <div class="field"><label for="v-name">Student name</label><input id="v-name" type="text" autocomplete="off"></div>
+      <fieldset class="field"><legend>Best first-try score for each round</legend><div class="v-scores">
+        ${ROUNDS.map((r, i) => `<div class="v-score"><label for="v-s${i}">Round ${i + 1}: ${r.name} (0 to ${r.total})</label><input id="v-s${i}" type="number" inputmode="numeric" min="0" max="${r.total}" step="1"></div>`).join('')}
+      </div></fieldset>
+      <div class="field"><label for="v-ts">Date and time, as printed (for example 2026-10-26 14:05:09)</label><input id="v-ts" type="text" autocomplete="off"></div>
+      <div class="field"><label for="v-code">Verification code (8 characters)</label><input id="v-code" type="text" maxlength="8" autocomplete="off" autocapitalize="characters" spellcheck="false"></div>
+      <button type="submit" class="btn">Check code</button>
+    </form>
+    <div id="v-result" aria-live="polite"></div>
+    <p><a href="${esc(location.pathname)}">Back to the game</a></p>
+  </section>`;
+  $('#vform').addEventListener('submit', e => {
+    e.preventDefault();
+    const out = $('#v-result');
+    const name = $('#v-name').value, ts = $('#v-ts').value.trim(), code = $('#v-code').value.trim().toUpperCase();
+    const scores = ROUNDS.map((r, i) => $('#v-s' + i).value.trim());
+    const bad = scores.findIndex((s, i) => !/^\d+$/.test(s) || +s > ROUNDS[i].total);
+    if (!name.trim() || !ts || !code || bad !== -1) {
+      out.innerHTML = card('wrong', 'Some fields need attention', `<p>${bad !== -1 ? `Round ${bad + 1} needs a whole number from 0 to ${ROUNDS[bad].total}. ` : ''}Fill in every field, then check again.</p>`);
+      return;
+    }
+    const ok = makeCode(name, scores.map(Number), ts) === code;
+    out.innerHTML = ok
+      ? card('right', 'Code matches', '<p>This certificate matches the name, scores, and time it shows.</p>')
+      : card('wrong', 'Code does not match', '<p>Check each field against the certificate. A typo in the name, any score, the time, or the code will cause a mismatch.</p>');
+  });
+}
+
+if (new URLSearchParams(location.search).has('verify')) initVerify(); else initGame();
+})();
+</script>
+</body>
+</html>
